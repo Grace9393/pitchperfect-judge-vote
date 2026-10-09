@@ -295,7 +295,7 @@ function CodesCard({ code, onAdminChanged }: { code: string; onAdminChanged: () 
     const { error } = key === "admin"
       ? await supabase.rpc("admin_set_admin_code", { p_code: code, p_new: v })
       : await supabase.rpc("admin_set_judge_code", { p_code: code, p_judge: key, p_new: v });
-    if (error) return toast.error(errMsg(error));
+    if (error) { toast.error(errMsg(error)); return; }
     toast.success("Code updated. Share it privately — it can't be shown again.");
     setDrafts((d) => ({ ...d, [key]: "" }));
     if (key === "admin") onAdminChanged();
@@ -335,7 +335,7 @@ function TracksEditor({ code, tracks }: { code: string; tracks: Track[] }) {
     const e = edit[id];
     if (!e) return;
     const bad = e.sources.find((s) => s.url && !/^https?:\/\//.test(s.url));
-    if (bad) return toast.error(`URL must start with http(s)://: ${bad.url}`);
+    if (bad) { toast.error(`URL must start with http(s)://: ${bad.url}`); return; }
     const { error } = await supabase.rpc("admin_update_track", { p_code: code, p_id: id, p_data_sources: e.data_sources, p_sources: e.sources.filter((s) => s.url || s.label) as never });
     if (error) toast.error(errMsg(error));
     else toast.success("Track sources saved");

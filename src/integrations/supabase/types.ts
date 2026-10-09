@@ -166,6 +166,44 @@ export type Database = {
           },
         ]
       }
+      submissions: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          lovable_url: string
+          name: string
+          project_name: string
+          track_id: number
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          lovable_url: string
+          name: string
+          project_name: string
+          track_id: number
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          lovable_url?: string
+          name?: string
+          project_name?: string
+          track_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "submissions_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "tracks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       teams: {
         Row: {
           built_with_lovable: boolean
@@ -320,6 +358,10 @@ export type Database = {
       _judge_id: { Args: { p_code: string }; Returns: string }
       _require_admin: { Args: { p_code: string }; Returns: undefined }
       admin_code_status: { Args: { p_code: string }; Returns: Json }
+      admin_delete_submission: {
+        Args: { p_code: string; p_id: string }
+        Returns: undefined
+      }
       admin_delete_team: {
         Args: { p_code: string; p_id: string }
         Returns: undefined
@@ -329,6 +371,7 @@ export type Database = {
         Args: { p_code: string; p_count: number; p_team: string }
         Returns: string[]
       }
+      admin_list_submissions: { Args: { p_code: string }; Returns: Json }
       admin_list_voters: { Args: { p_code: string }; Returns: Json }
       admin_login: { Args: { p_code: string }; Returns: boolean }
       admin_reopen_score: {
@@ -390,6 +433,16 @@ export type Database = {
           isOneToOne: false
           isSetofReturn: true
         }
+      }
+      submit_project: {
+        Args: {
+          p_email: string
+          p_name: string
+          p_project: string
+          p_track: number
+          p_url: string
+        }
+        Returns: undefined
       }
       submit_score: {
         Args: {
