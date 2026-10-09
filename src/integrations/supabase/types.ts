@@ -14,13 +14,362 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      admin_secrets: {
+        Row: {
+          code: string
+          id: number
+        }
+        Insert: {
+          code: string
+          id?: number
+        }
+        Update: {
+          code?: string
+          id?: number
+        }
+        Relationships: []
+      }
+      event_state: {
+        Row: {
+          current_team_id: string | null
+          demo_mode: boolean
+          id: number
+          phase: string
+          scores_revealed: boolean
+          scoring_open: boolean
+          timer_started_at: string | null
+          updated_at: string
+          version: number
+          voting_open: boolean
+          weights: Json
+        }
+        Insert: {
+          current_team_id?: string | null
+          demo_mode?: boolean
+          id?: number
+          phase?: string
+          scores_revealed?: boolean
+          scoring_open?: boolean
+          timer_started_at?: string | null
+          updated_at?: string
+          version?: number
+          voting_open?: boolean
+          weights?: Json
+        }
+        Update: {
+          current_team_id?: string | null
+          demo_mode?: boolean
+          id?: number
+          phase?: string
+          scores_revealed?: boolean
+          scoring_open?: boolean
+          timer_started_at?: string | null
+          updated_at?: string
+          version?: number
+          voting_open?: boolean
+          weights?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_state_current_team_id_fkey"
+            columns: ["current_team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      judges: {
+        Row: {
+          code: string
+          id: string
+          name: string
+          sort_order: number
+        }
+        Insert: {
+          code: string
+          id?: string
+          name: string
+          sort_order?: number
+        }
+        Update: {
+          code?: string
+          id?: string
+          name?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
+      scores: {
+        Row: {
+          clarity: number
+          data: number
+          execution: number
+          id: string
+          impact: number
+          judge_id: string
+          locked: boolean
+          problem: number
+          team_id: string
+          updated_at: string
+        }
+        Insert: {
+          clarity: number
+          data: number
+          execution: number
+          id?: string
+          impact: number
+          judge_id: string
+          locked?: boolean
+          problem: number
+          team_id: string
+          updated_at?: string
+        }
+        Update: {
+          clarity?: number
+          data?: number
+          execution?: number
+          id?: string
+          impact?: number
+          judge_id?: string
+          locked?: boolean
+          problem?: number
+          team_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scores_judge_id_fkey"
+            columns: ["judge_id"]
+            isOneToOne: false
+            referencedRelation: "judges"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scores_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      teams: {
+        Row: {
+          built_with_lovable: boolean
+          created_at: string
+          deck_url: string
+          description: string
+          id: string
+          is_demo: boolean
+          members: string
+          name: string
+          project_name: string
+          sort_order: number
+          table_number: string
+          track_id: number | null
+          voter_group: string
+        }
+        Insert: {
+          built_with_lovable?: boolean
+          created_at?: string
+          deck_url?: string
+          description?: string
+          id?: string
+          is_demo?: boolean
+          members?: string
+          name: string
+          project_name?: string
+          sort_order?: number
+          table_number?: string
+          track_id?: number | null
+          voter_group?: string
+        }
+        Update: {
+          built_with_lovable?: boolean
+          created_at?: string
+          deck_url?: string
+          description?: string
+          id?: string
+          is_demo?: boolean
+          members?: string
+          name?: string
+          project_name?: string
+          sort_order?: number
+          table_number?: string
+          track_id?: number | null
+          voter_group?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "teams_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "tracks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tracks: {
+        Row: {
+          data_sources: string
+          id: number
+          name_en: string
+          name_zh: string
+        }
+        Insert: {
+          data_sources?: string
+          id: number
+          name_en: string
+          name_zh: string
+        }
+        Update: {
+          data_sources?: string
+          id?: number
+          name_en?: string
+          name_zh?: string
+        }
+        Relationships: []
+      }
+      voters: {
+        Row: {
+          code: string
+          id: string
+          is_demo: boolean
+          team_id: string | null
+        }
+        Insert: {
+          code: string
+          id?: string
+          is_demo?: boolean
+          team_id?: string | null
+        }
+        Update: {
+          code?: string
+          id?: string
+          is_demo?: boolean
+          team_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "voters_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      votes: {
+        Row: {
+          created_at: string
+          id: string
+          team_id: string
+          voter_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          team_id: string
+          voter_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          team_id?: string
+          voter_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "votes_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "votes_voter_id_fkey"
+            columns: ["voter_id"]
+            isOneToOne: false
+            referencedRelation: "voters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      _is_admin: { Args: { p_code: string }; Returns: boolean }
+      _require_admin: { Args: { p_code: string }; Returns: undefined }
+      admin_delete_team: {
+        Args: { p_code: string; p_id: string }
+        Returns: undefined
+      }
+      admin_disable_demo: { Args: { p_code: string }; Returns: undefined }
+      admin_generate_voters: {
+        Args: { p_code: string; p_count: number; p_team: string }
+        Returns: string[]
+      }
+      admin_list_voters: { Args: { p_code: string }; Returns: Json }
+      admin_login: { Args: { p_code: string }; Returns: boolean }
+      admin_reopen_score: {
+        Args: { p_code: string; p_judge: string; p_team: string }
+        Returns: undefined
+      }
+      admin_reset: {
+        Args: { p_code: string; p_what: string }
+        Returns: undefined
+      }
+      admin_update_state: {
+        Args: { p_code: string; p_patch: Json }
+        Returns: undefined
+      }
+      admin_upsert_team: {
+        Args: { p_code: string; p_team: Json }
+        Returns: string
+      }
+      cast_vote: {
+        Args: { p_code: string; p_team: string }
+        Returns: undefined
+      }
+      get_results: { Args: { p_code?: string }; Returns: Json }
+      judge_login: { Args: { p_code: string }; Returns: Json }
+      judge_my_scores: {
+        Args: { p_code: string }
+        Returns: {
+          clarity: number
+          data: number
+          execution: number
+          id: string
+          impact: number
+          judge_id: string
+          locked: boolean
+          problem: number
+          team_id: string
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "scores"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      submit_score: {
+        Args: {
+          p_clarity: number
+          p_code: string
+          p_data: number
+          p_execution: number
+          p_impact: number
+          p_problem: number
+          p_team: string
+        }
+        Returns: undefined
+      }
+      voter_login: { Args: { p_code: string }; Returns: Json }
     }
     Enums: {
       [_ in never]: never
