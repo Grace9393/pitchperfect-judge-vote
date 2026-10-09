@@ -30,6 +30,7 @@ const dict = {
   members: { en: "Members", zh: "成員" },
   table: { en: "Table", zh: "桌號" },
   deck: { en: "Deck", zh: "簡報" },
+  verified: { en: "verified", zh: "查核於" },
   dataSources: { en: "Track data sources", zh: "賽道資料來源" },
   builtWithLovable: { en: "Built with Lovable", zh: "使用 Lovable 打造" },
   votesLeft: { en: "votes left", zh: "票剩餘" },
