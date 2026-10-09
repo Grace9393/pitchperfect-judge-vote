@@ -11,10 +11,16 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
+  AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { ResultsView } from "@/components/ResultsView";
 import { useT } from "@/lib/i18n";
 import {
   CRITERIA, PHASES, computeLeaderboard, errMsg, normalizeWeights, trackName, useHubData, useStoredCode, weightedScore,
-  type Team, type Weights,
+  type Team, type Track, type TrackSource, type Weights,
 } from "@/lib/hub";
 
 export const Route = createFileRoute("/admin")({
@@ -56,6 +62,7 @@ function Dashboard({ code, onSignOut }: { code: string; onSignOut: () => void })
   const hub = useHubData(code);
   const qc = useQueryClient();
   const { state, teams, tracks, judges, results } = hub;
+  const [confirmPublish, setConfirmPublish] = useState<null | "reveal" | "phase">(null);
 
   const call = async (fn: () => PromiseLike<{ error: unknown }>, msg?: string) => {
     const { error } = await fn();
@@ -97,7 +104,7 @@ function Dashboard({ code, onSignOut }: { code: string; onSignOut: () => void })
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-6">
               {PHASES.map((p) => (
                 <Button key={p.key} variant={state.phase === p.key ? "default" : "outline"} className="h-auto py-2"
-                  onClick={() => patch({ phase: p.key, ...(p.key === "voting" ? { voting_open: true } : {}), ...(p.key === "pitches" ? { scoring_open: true } : {}) })}>
+                  onClick={() => p.key === "results" && !state.scores_revealed ? setConfirmPublish("phase") : patch({ phase: p.key, ...(p.key === "voting" ? { voting_open: true } : {}), ...(p.key === "pitches" ? { scoring_open: true } : {}) })}>
                   {lang === "zh" ? p.zh : p.en}
                 </Button>
               ))}
@@ -106,7 +113,7 @@ function Dashboard({ code, onSignOut }: { code: string; onSignOut: () => void })
           <div className="grid gap-4 md:grid-cols-3">
             <ToggleCard label="Judge scoring open" checked={state.scoring_open} onChange={(v) => patch({ scoring_open: v })} />
             <ToggleCard label="Audience voting open" checked={state.voting_open} onChange={(v) => patch({ voting_open: v })} />
-            <ToggleCard label="Reveal scores (judges + results screen)" checked={state.scores_revealed} onChange={(v) => patch({ scores_revealed: v })} />
+            <ToggleCard label="Reveal scores (judges + results screen)" checked={state.scores_revealed} onChange={(v) => (v ? setConfirmPublish("reveal") : patch({ scores_revealed: false }, "Results hidden"))} />
           </div>
           <Card className="space-y-3 p-4">
             <div className="text-sm font-medium">Current team on stage</div>
@@ -207,11 +214,27 @@ function Dashboard({ code, onSignOut }: { code: string; onSignOut: () => void })
             ))}
           </div>
           <Button onClick={() => exportCsv(board, tracks, results, judges, teams, state.weights)}>Export CSV</Button>
+          <Card className="space-y-4 border-dashed p-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <div className="font-medium">Results screen preview (only you can see this)</div>
+                <p className="text-sm text-muted-foreground">
+                  {state.scores_revealed || state.phase === "results" ? "Results are currently PUBLISHED on the Results page." : "Not published yet. The Results page shows a holding screen."}
+                </p>
+              </div>
+              {state.scores_revealed || state.phase === "results" ? <Badge>Published</Badge> : (
+                <Button onClick={() => setConfirmPublish("reveal")}>Publish to Results page…</Button>
+              )}
+            </div>
+            <div className="rounded-lg bg-muted/40 p-4"><ResultsView board={board} tracks={tracks} /></div>
+          </Card>
         </TabsContent>
 
         <TabsContent value="voters"><VotersTab code={code} teams={teams} /></TabsContent>
 
         <TabsContent value="settings" className="space-y-4">
+          <CodesCard code={code} onAdminChanged={onSignOut} />
+          <TracksEditor code={code} tracks={tracks} />
           <WeightsCard weights={state.weights} onSave={(w) => patch({ weights: w }, "Weights saved")} />
           <Card className="space-y-3 p-4">
             <div className="font-medium">Reset</div>
@@ -230,7 +253,123 @@ function Dashboard({ code, onSignOut }: { code: string; onSignOut: () => void })
           )}
         </TabsContent>
       </Tabs>
+
+      <AlertDialog open={!!confirmPublish} onOpenChange={(o) => !o && setConfirmPublish(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Publish results?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This shows the winners and all standings on the public Results page (and the projector) right away, and lets judges see each other's scores.
+              {board[0] && ` Current 1st place: ${board[0].team.name} (${board[0].combined.toFixed(1)}).`} Check the preview first.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => {
+              patch(confirmPublish === "phase" ? { phase: "results", scores_revealed: true, voting_open: false, scoring_open: false } : { scores_revealed: true }, "Results published");
+              setConfirmPublish(null);
+            }}>Yes, publish results</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
+  );
+}
+
+function CodesCard({ code, onAdminChanged }: { code: string; onAdminChanged: () => void }) {
+  const qc = useQueryClient();
+  const status = useQuery({
+    queryKey: ["hub", "codes", code],
+    queryFn: async () => (await supabase.rpc("admin_code_status", { p_code: code })).data as unknown as { admin_default: boolean; judges: { id: string; name: string; is_default: boolean }[] },
+  });
+  const [drafts, setDrafts] = useState<Record<string, string>>({});
+  const gen = () => {
+    const a = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    const b = new Uint32Array(10);
+    crypto.getRandomValues(b);
+    return Array.from(b, (x) => a[x % a.length]).join("").replace(/(.{5})/, "$1-");
+  };
+  const save = async (key: string) => {
+    const v = drafts[key]?.trim();
+    if (!v) return;
+    const { error } = key === "admin"
+      ? await supabase.rpc("admin_set_admin_code", { p_code: code, p_new: v })
+      : await supabase.rpc("admin_set_judge_code", { p_code: code, p_judge: key, p_new: v });
+    if (error) return toast.error(errMsg(error));
+    toast.success("Code updated. Share it privately — it can't be shown again.");
+    setDrafts((d) => ({ ...d, [key]: "" }));
+    if (key === "admin") onAdminChanged();
+    else qc.invalidateQueries({ queryKey: ["hub", "codes"] });
+  };
+  const row = (key: string, label: string, isDefault: boolean | undefined, min: number) => (
+    <div key={key} className="flex flex-wrap items-center gap-2">
+      <span className="w-40 text-sm font-medium">{label}</span>
+      {isDefault ? <Badge variant="destructive">placeholder</Badge> : <Badge variant="secondary">custom</Badge>}
+      <Input className="w-48 font-mono" placeholder={`New code (min ${min})`} value={drafts[key] ?? ""}
+        onChange={(e) => setDrafts((d) => ({ ...d, [key]: e.target.value }))} />
+      <Button size="sm" variant="outline" onClick={() => setDrafts((d) => ({ ...d, [key]: gen() }))}>Generate</Button>
+      <Button size="sm" disabled={(drafts[key]?.trim().length ?? 0) < min} onClick={() => save(key)}>Save</Button>
+    </div>
+  );
+  return (
+    <Card className="space-y-3 p-4">
+      <div className="font-medium">Access codes</div>
+      <p className="text-sm text-muted-foreground">
+        Codes are stored only as one-way hashes, so nobody (including organizers) can read them back. Copy a new code before saving and share it privately.
+        Changing the admin code signs you out.
+      </p>
+      {row("admin", "Admin", status.data?.admin_default, 10)}
+      {status.data?.judges?.map((j) => row(j.id, j.name, j.is_default, 8))}
+    </Card>
+  );
+}
+
+function TracksEditor({ code, tracks }: { code: string; tracks: Track[] }) {
+  const qc = useQueryClient();
+  const [edit, setEdit] = useState<Record<number, { data_sources: string; sources: TrackSource[] }>>({});
+  useEffect(() => {
+    setEdit(Object.fromEntries(tracks.map((t) => [t.id, { data_sources: t.data_sources, sources: t.sources ?? [] }])));
+  }, [tracks]);
+  const today = () => new Date().toISOString().slice(0, 10);
+  const save = async (id: number) => {
+    const e = edit[id];
+    if (!e) return;
+    const bad = e.sources.find((s) => s.url && !/^https?:\/\//.test(s.url));
+    if (bad) return toast.error(`URL must start with http(s)://: ${bad.url}`);
+    const { error } = await supabase.rpc("admin_update_track", { p_code: code, p_id: id, p_data_sources: e.data_sources, p_sources: e.sources.filter((s) => s.url || s.label) as never });
+    if (error) toast.error(errMsg(error));
+    else toast.success("Track sources saved");
+    qc.invalidateQueries({ queryKey: ["hub"] });
+  };
+  const upd = (id: number, i: number, k: keyof TrackSource, v: string) =>
+    setEdit((m) => ({ ...m, [id]: { ...m[id]!, sources: m[id]!.sources.map((s, j) => (j === i ? { ...s, [k]: v } : s)) } }));
+  return (
+    <Card className="space-y-4 p-4">
+      <div className="font-medium">Track data sources</div>
+      {tracks.map((tr) => {
+        const e = edit[tr.id];
+        if (!e) return null;
+        return (
+          <div key={tr.id} className="space-y-2 rounded-md border p-3">
+            <div className="text-sm font-semibold">{tr.name_en}</div>
+            <Textarea value={e.data_sources} rows={2} onChange={(ev) => setEdit((m) => ({ ...m, [tr.id]: { ...e, data_sources: ev.target.value } }))} />
+            {e.sources.map((s, i) => (
+              <div key={i} className="grid gap-2 sm:grid-cols-[1fr_1.4fr_9rem_auto_auto]">
+                <Input placeholder="Label" value={s.label} onChange={(ev) => upd(tr.id, i, "label", ev.target.value)} />
+                <Input placeholder="https://…" value={s.url} onChange={(ev) => upd(tr.id, i, "url", ev.target.value)} />
+                <Input type="date" value={s.verified_on} onChange={(ev) => upd(tr.id, i, "verified_on", ev.target.value)} />
+                <Button size="sm" variant="outline" onClick={() => upd(tr.id, i, "verified_on", today())}>Verified today</Button>
+                <Button size="sm" variant="ghost" onClick={() => setEdit((m) => ({ ...m, [tr.id]: { ...e, sources: e.sources.filter((_, j) => j !== i) } }))}>Remove</Button>
+              </div>
+            ))}
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" onClick={() => setEdit((m) => ({ ...m, [tr.id]: { ...e, sources: [...e.sources, { label: "", url: "", verified_on: "" }] } }))}>Add source</Button>
+              <Button size="sm" onClick={() => save(tr.id)}>Save track</Button>
+            </div>
+          </div>
+        );
+      })}
+    </Card>
   );
 }
 
