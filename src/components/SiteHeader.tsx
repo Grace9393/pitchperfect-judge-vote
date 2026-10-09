@@ -4,6 +4,7 @@ import { useT } from "@/lib/i18n";
 export function SiteHeader() {
   const { t, lang, setLang } = useT();
   const links = [
+    { to: "/submit", k: "submitNav" },
     { to: "/judge", k: "judge" },
     { to: "/vote", k: "vote" },
     { to: "/results", k: "results" },

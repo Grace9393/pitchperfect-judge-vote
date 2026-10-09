@@ -95,6 +95,7 @@ function Dashboard({ code, onSignOut }: { code: string; onSignOut: () => void })
           <TabsTrigger value="scores">Scoring progress</TabsTrigger>
           <TabsTrigger value="board">Leaderboard</TabsTrigger>
           <TabsTrigger value="voters">Voter codes</TabsTrigger>
+          <TabsTrigger value="subs">Submissions</TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
 
@@ -229,6 +230,8 @@ function Dashboard({ code, onSignOut }: { code: string; onSignOut: () => void })
             <div className="rounded-lg bg-muted/40 p-4"><ResultsView board={board} tracks={tracks} /></div>
           </Card>
         </TabsContent>
+
+        <TabsContent value="subs"><SubmissionsTab code={code} tracks={tracks} /></TabsContent>
 
         <TabsContent value="voters"><VotersTab code={code} teams={teams} /></TabsContent>
 
@@ -524,4 +527,51 @@ function exportCsv(board: ReturnType<typeof computeLeaderboard>, tracks: ReturnT
   a.href = URL.createObjectURL(blob);
   a.download = "hfh-taiwan-results.csv";
   a.click();
+}
+
+type Submission = { id: string; name: string; email: string; project_name: string; track_id: number; lovable_url: string; created_at: string };
+
+function SubmissionsTab({ code, tracks }: { code: string; tracks: Track[] }) {
+  const qc = useQueryClient();
+  const list = useQuery({
+    queryKey: ["hub", "subs", code],
+    queryFn: async () => ((await supabase.rpc("admin_list_submissions", { p_code: code })).data ?? []) as unknown as Submission[],
+    refetchInterval: 15000,
+  });
+  const csv = () => {
+    const esc = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+    const rows = [["submitted_at", "name", "email", "project", "track", "lovable_url"].join(",")];
+    list.data?.forEach((s) => rows.push([s.created_at, s.name, s.email, s.project_name, tracks.find((t) => t.id === s.track_id)?.name_en, s.lovable_url].map(esc).join(",")));
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([rows.join("\n")], { type: "text/csv" }));
+    a.download = "hfh-submissions.csv";
+    a.click();
+  };
+  return (
+    <Card className="space-y-3 overflow-x-auto p-4">
+      <div className="flex items-center justify-between">
+        <div className="font-medium">{list.data?.length ?? 0} submissions · public form at /submit</div>
+        <Button size="sm" variant="outline" onClick={csv}>Export CSV</Button>
+      </div>
+      <table className="w-full text-sm">
+        <thead><tr className="border-b text-left"><th className="py-2">Name</th><th>Email</th><th>Project</th><th>Track</th><th>Lovable URL</th><th>When</th><th /></tr></thead>
+        <tbody>
+          {list.data?.map((s) => (
+            <tr key={s.id} className="border-b">
+              <td className="py-1.5">{s.name}</td><td>{s.email}</td><td>{s.project_name}</td>
+              <td className="text-xs">{tracks.find((t) => t.id === s.track_id)?.name_en}</td>
+              <td><a href={s.lovable_url} target="_blank" rel="noreferrer" className="text-primary underline">link</a></td>
+              <td className="text-xs text-muted-foreground">{new Date(s.created_at).toLocaleString()}</td>
+              <td><Button size="sm" variant="ghost" onClick={async () => {
+                if (!confirm(`Delete submission from ${s.name}?`)) return;
+                const { error } = await supabase.rpc("admin_delete_submission", { p_code: code, p_id: s.id });
+                if (error) toast.error(errMsg(error));
+                qc.invalidateQueries({ queryKey: ["hub", "subs"] });
+              }}>Delete</Button></td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </Card>
+  );
 }
