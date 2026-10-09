@@ -37,7 +37,7 @@ const dict = {
   email: { en: "Email", zh: "電子郵件" },
   projectName: { en: "Project name", zh: "作品名稱" },
   track: { en: "Track", zh: "賽道" },
-  lovableUrl: { en: "Lovable project URL", zh: "Lovable 作品網址" },
+  lovableUrl: { en: "Project URL (Lovable or custom domain)", zh: "作品網址（Lovable 或自訂網域）" },
   submitBtn: { en: "Submit project", zh: "送出作品" },
   submitThanks: { en: "Thanks — your project was submitted!", zh: "感謝您，作品已成功送出！" },
   submitAnother: { en: "Submit another", zh: "再提交一件" },

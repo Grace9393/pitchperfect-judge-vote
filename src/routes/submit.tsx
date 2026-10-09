@@ -73,7 +73,7 @@ function SubmitPage() {
             {tracks.map((tr) => <option key={tr.id} value={tr.id}>{trackName(tr, lang)}</option>)}
           </select>
         </label>
-        {field("url", t("lovableUrl"), "url", { maxLength: 500, placeholder: "https://your-project.lovable.app" })}
+        {field("url", t("lovableUrl"), "url", { maxLength: 500, placeholder: "https://your-project.lovable.app or your custom domain" })}
         {err && <p className="text-sm text-destructive">{err}</p>}
         <Button type="submit" className="h-11 w-full" disabled={busy}>{t("submitBtn")}</Button>
       </form>
