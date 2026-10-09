@@ -112,8 +112,8 @@ function Dashboard({ code, onSignOut }: { code: string; onSignOut: () => void })
             <div className="text-sm font-medium">Current team on stage</div>
             <div className="text-lg font-semibold">{current ? `${current.name} · ${current.project_name}` : "None — judges see “waiting for next team”"}</div>
             <div className="flex flex-wrap gap-2">
-              <Button variant="outline" disabled={currentIdx <= 0} onClick={() => patch({ current_team_id: teams[currentIdx - 1].id, timer_started_at: "" })}>← Previous</Button>
-              <Button disabled={currentIdx >= teams.length - 1} onClick={() => patch({ current_team_id: teams[currentIdx + 1].id, timer_started_at: "" })}>Next team →</Button>
+              <Button variant="outline" disabled={currentIdx <= 0} onClick={() => patch({ current_team_id: teams[currentIdx - 1]!.id, timer_started_at: "" })}>← Previous</Button>
+              <Button disabled={currentIdx >= teams.length - 1} onClick={() => patch({ current_team_id: teams[currentIdx + 1]!.id, timer_started_at: "" })}>Next team →</Button>
               <Button variant="outline" onClick={() => patch({ current_team_id: "" })}>Clear (waiting)</Button>
               <Button variant="secondary" disabled={!current} onClick={() => patch({ timer_started_at: new Date().toISOString() })}>Start 90s timer for everyone</Button>
             </div>

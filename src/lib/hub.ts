@@ -108,7 +108,7 @@ export function useHubData(adminCode?: string | null) {
   const results = useQuery({
     queryKey: ["hub", "results", adminCode ?? ""],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc("get_results", { p_code: adminCode ?? undefined });
+      const { data, error } = await supabase.rpc("get_results", adminCode ? { p_code: adminCode } : {});
       if (error) throw error;
       return data as unknown as Results;
     },
