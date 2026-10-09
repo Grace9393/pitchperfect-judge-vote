@@ -533,15 +533,24 @@ type Submission = { id: string; name: string; email: string; project_name: strin
 
 function SubmissionsTab({ code, tracks }: { code: string; tracks: Track[] }) {
   const qc = useQueryClient();
+  const [q, setQ] = useState("");
+  const [trackFilter, setTrackFilter] = useState("");
   const list = useQuery({
     queryKey: ["hub", "subs", code],
     queryFn: async () => ((await supabase.rpc("admin_list_submissions", { p_code: code })).data ?? []) as unknown as Submission[],
     refetchInterval: 15000,
   });
+  const trackNameOf = (id: number) => tracks.find((t) => t.id === id)?.name_en ?? "";
+  const filtered = (list.data ?? []).filter((s) => {
+    if (trackFilter && String(s.track_id) !== trackFilter) return false;
+    const needle = q.trim().toLowerCase();
+    if (!needle) return true;
+    return [s.name, s.email, s.project_name, s.lovable_url, trackNameOf(s.track_id)].some((v) => v.toLowerCase().includes(needle));
+  });
   const csv = () => {
     const esc = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
-    const rows = [["submitted_at", "name", "email", "project", "track", "lovable_url"].join(",")];
-    list.data?.forEach((s) => rows.push([s.created_at, s.name, s.email, s.project_name, tracks.find((t) => t.id === s.track_id)?.name_en, s.lovable_url].map(esc).join(",")));
+    const rows = [["submitted_at", "name", "email", "project", "track", "project_url"].join(",")];
+    filtered.forEach((s) => rows.push([new Date(s.created_at).toISOString(), s.name, s.email, s.project_name, trackNameOf(s.track_id), s.lovable_url].map(esc).join(",")));
     const a = document.createElement("a");
     a.href = URL.createObjectURL(new Blob([rows.join("\n")], { type: "text/csv" }));
     a.download = "hfh-submissions.csv";
@@ -549,14 +558,21 @@ function SubmissionsTab({ code, tracks }: { code: string; tracks: Track[] }) {
   };
   return (
     <Card className="space-y-3 overflow-x-auto p-4">
-      <div className="flex items-center justify-between">
-        <div className="font-medium">{list.data?.length ?? 0} submissions · public form at /submit</div>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="font-medium">{filtered.length} of {list.data?.length ?? 0} submissions · public form at /submit</div>
         <Button size="sm" variant="outline" onClick={csv}>Export CSV</Button>
       </div>
+      <div className="flex flex-wrap gap-2">
+        <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search name, email, project…" className="h-9 w-64" />
+        <select value={trackFilter} onChange={(e) => setTrackFilter(e.target.value)} className="h-9 rounded-md border bg-background px-2 text-sm">
+          <option value="">All tracks</option>
+          {tracks.map((t) => <option key={t.id} value={t.id}>{t.name_en}</option>)}
+        </select>
+      </div>
       <table className="w-full text-sm">
-        <thead><tr className="border-b text-left"><th className="py-2">Name</th><th>Email</th><th>Project</th><th>Track</th><th>Lovable URL</th><th>When</th><th /></tr></thead>
+        <thead><tr className="border-b text-left"><th className="py-2">Name</th><th>Email</th><th>Project</th><th>Track</th><th>Project URL</th><th>When</th><th /></tr></thead>
         <tbody>
-          {list.data?.map((s) => (
+          {filtered.map((s) => (
             <tr key={s.id} className="border-b">
               <td className="py-1.5">{s.name}</td><td>{s.email}</td><td>{s.project_name}</td>
               <td className="text-xs">{tracks.find((t) => t.id === s.track_id)?.name_en}</td>
