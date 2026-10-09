@@ -22,6 +22,13 @@
       "when": 1791514159178,
       "tag": "0002_project_submissions",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1791515628215,
+      "tag": "0003_submit_project_any_https_url",
+      "breakpoints": true
     }
   ]
 }
