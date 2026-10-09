@@ -16,16 +16,22 @@ export type Database = {
     Tables: {
       admin_secrets: {
         Row: {
-          code: string
+          code: string | null
+          code_hash: string | null
           id: number
+          is_default: boolean
         }
         Insert: {
-          code: string
+          code?: string | null
+          code_hash?: string | null
           id?: number
+          is_default?: boolean
         }
         Update: {
-          code?: string
+          code?: string | null
+          code_hash?: string | null
           id?: number
+          is_default?: boolean
         }
         Relationships: []
       }
@@ -81,20 +87,26 @@ export type Database = {
       }
       judges: {
         Row: {
-          code: string
+          code: string | null
+          code_hash: string | null
           id: string
+          is_default: boolean
           name: string
           sort_order: number
         }
         Insert: {
-          code: string
+          code?: string | null
+          code_hash?: string | null
           id?: string
+          is_default?: boolean
           name: string
           sort_order?: number
         }
         Update: {
-          code?: string
+          code?: string | null
+          code_hash?: string | null
           id?: string
+          is_default?: boolean
           name?: string
           sort_order?: number
         }
@@ -150,6 +162,44 @@ export type Database = {
             columns: ["team_id"]
             isOneToOne: false
             referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      submissions: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          lovable_url: string
+          name: string
+          project_name: string
+          track_id: number
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          lovable_url: string
+          name: string
+          project_name: string
+          track_id: number
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          lovable_url?: string
+          name?: string
+          project_name?: string
+          track_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "submissions_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "tracks"
             referencedColumns: ["id"]
           },
         ]
@@ -216,18 +266,21 @@ export type Database = {
           id: number
           name_en: string
           name_zh: string
+          sources: Json
         }
         Insert: {
           data_sources?: string
           id: number
           name_en: string
           name_zh: string
+          sources?: Json
         }
         Update: {
           data_sources?: string
           id?: number
           name_en?: string
           name_zh?: string
+          sources?: Json
         }
         Relationships: []
       }
@@ -302,7 +355,13 @@ export type Database = {
     }
     Functions: {
       _is_admin: { Args: { p_code: string }; Returns: boolean }
+      _judge_id: { Args: { p_code: string }; Returns: string }
       _require_admin: { Args: { p_code: string }; Returns: undefined }
+      admin_code_status: { Args: { p_code: string }; Returns: Json }
+      admin_delete_submission: {
+        Args: { p_code: string; p_id: string }
+        Returns: undefined
+      }
       admin_delete_team: {
         Args: { p_code: string; p_id: string }
         Returns: undefined
@@ -312,6 +371,7 @@ export type Database = {
         Args: { p_code: string; p_count: number; p_team: string }
         Returns: string[]
       }
+      admin_list_submissions: { Args: { p_code: string }; Returns: Json }
       admin_list_voters: { Args: { p_code: string }; Returns: Json }
       admin_login: { Args: { p_code: string }; Returns: boolean }
       admin_reopen_score: {
@@ -322,8 +382,25 @@ export type Database = {
         Args: { p_code: string; p_what: string }
         Returns: undefined
       }
+      admin_set_admin_code: {
+        Args: { p_code: string; p_new: string }
+        Returns: undefined
+      }
+      admin_set_judge_code: {
+        Args: { p_code: string; p_judge: string; p_new: string }
+        Returns: undefined
+      }
       admin_update_state: {
         Args: { p_code: string; p_patch: Json }
+        Returns: undefined
+      }
+      admin_update_track: {
+        Args: {
+          p_code: string
+          p_data_sources: string
+          p_id: number
+          p_sources: Json
+        }
         Returns: undefined
       }
       admin_upsert_team: {
@@ -356,6 +433,16 @@ export type Database = {
           isOneToOne: false
           isSetofReturn: true
         }
+      }
+      submit_project: {
+        Args: {
+          p_email: string
+          p_name: string
+          p_project: string
+          p_track: number
+          p_url: string
+        }
+        Returns: undefined
       }
       submit_score: {
         Args: {

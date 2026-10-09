@@ -141,7 +141,21 @@ function JudgePage() {
               {team.deck_url && <a href={team.deck_url} target="_blank" rel="noreferrer" className="text-primary underline">{t("deck")}</a>}
             </div>
             <p className="mt-2 text-sm text-muted-foreground">{t("members")}: {team.members}</p>
-            {track && <p className="mt-2 text-xs text-muted-foreground"><span className="font-medium">{t("dataSources")}:</span> {track.data_sources}</p>}
+            {track && (
+              <div className="mt-2 text-xs text-muted-foreground">
+                <p><span className="font-medium">{t("dataSources")}:</span> {track.data_sources}</p>
+                {track.sources?.length > 0 && (
+                  <ul className="mt-1 space-y-0.5">
+                    {track.sources.map((src, i) => (
+                      <li key={i}>
+                        <a href={src.url} target="_blank" rel="noreferrer" className="text-primary underline">{src.label || src.url}</a>
+                        {src.verified_on && <span> · {t("verified")} {src.verified_on}</span>}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
           </Card>
 
           <Timer serverStart={state?.timer_started_at ?? null} />

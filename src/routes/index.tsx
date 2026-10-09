@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Gavel, Vote, LayoutDashboard, Trophy } from "lucide-react";
+import { Send, Gavel, Vote, LayoutDashboard, Trophy } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { useT } from "@/lib/i18n";
 import { PHASES, useHubData } from "@/lib/hub";
@@ -21,6 +21,7 @@ function Index() {
   const { state } = useHubData();
   const phase = PHASES.find((p) => p.key === state?.phase);
   const cards = [
+    { to: "/submit", icon: Send, k: "submitNav", d: "submitDesc" },
     { to: "/judge", icon: Gavel, k: "judge", d: "judgeDesc" },
     { to: "/vote", icon: Vote, k: "vote", d: "voteDesc" },
     { to: "/results", icon: Trophy, k: "results", d: "resultsDesc" },

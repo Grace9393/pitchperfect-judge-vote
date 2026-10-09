@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
-export type Track = { id: number; name_en: string; name_zh: string; data_sources: string };
+export type TrackSource = { label: string; url: string; verified_on: string };
+export type Track = { id: number; name_en: string; name_zh: string; data_sources: string; sources: TrackSource[] };
 export type Team = {
   id: string; name: string; track_id: number | null; members: string; project_name: string;
   description: string; deck_url: string; table_number: string; built_with_lovable: boolean;
