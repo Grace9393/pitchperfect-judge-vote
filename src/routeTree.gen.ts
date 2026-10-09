@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as JudgeRouteImport } from './routes/judge'
 import { Route as ResultsRouteImport } from './routes/results'
 import { Route as VoteRouteImport } from './routes/vote'
@@ -17,6 +18,11 @@ import { Route as VoteRouteImport } from './routes/vote'
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const JudgeRoute = JudgeRouteImport.update({
@@ -37,12 +43,14 @@ const VoteRoute = VoteRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/judge': typeof JudgeRoute
   '/results': typeof ResultsRoute
   '/vote': typeof VoteRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/judge': typeof JudgeRoute
   '/results': typeof ResultsRoute
   '/vote': typeof VoteRoute
@@ -50,20 +58,22 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/judge': typeof JudgeRoute
   '/results': typeof ResultsRoute
   '/vote': typeof VoteRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/judge' | '/results' | '/vote'
+  fullPaths: '/' | '/admin' | '/judge' | '/results' | '/vote'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/judge' | '/results' | '/vote'
-  id: '__root__' | '/' | '/judge' | '/results' | '/vote'
+  to: '/' | '/admin' | '/judge' | '/results' | '/vote'
+  id: '__root__' | '/' | '/admin' | '/judge' | '/results' | '/vote'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRoute: typeof AdminRoute
   JudgeRoute: typeof JudgeRoute
   ResultsRoute: typeof ResultsRoute
   VoteRoute: typeof VoteRoute
@@ -76,6 +86,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/judge': {
@@ -104,6 +121,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRoute: AdminRoute,
   JudgeRoute: JudgeRoute,
   ResultsRoute: ResultsRoute,
   VoteRoute: VoteRoute,
