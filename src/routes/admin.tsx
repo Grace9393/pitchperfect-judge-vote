@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { summarizeSubmission } from "@/lib/ai-review.functions";
+import { scanSubmission } from "@/lib/repo-scan.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { CodeGate } from "@/components/CodeGate";
 import { Button } from "@/components/ui/button";
@@ -726,6 +727,46 @@ function ReviewDialog({ code, sub, tracks, onClose }: { code: string; sub: Submi
             {f.summary
               ? <div className="mt-2 whitespace-pre-wrap text-sm">{f.summary.replace(/\*\*/g, "")}</div>
               : <p className="mt-2 text-xs text-muted-foreground">Uses the details above. AI can't open the link — always check the project yourself.</p>}
+          </div>
+          <div className="rounded-md border p-3">
+            <div className="flex items-center justify-between gap-2">
+              <div className="font-medium">Lovable usage scan</div>
+              <Button size="sm" variant="secondary" onClick={runScan} disabled={busy !== null || !f.url.trim()}>
+                {busy === "scan" ? "Scanning…" : scanRes ? "Re-scan repository" : "Scan repository"}
+              </Button>
+            </div>
+            {scanErr && <p className="mt-2 text-destructive">{scanErr}</p>}
+            {scanRes ? (
+              <div className="mt-2 space-y-1.5 text-sm">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge variant={scanRes.verdict === "No evidence" || scanRes.verdict === "error" || scanRes.verdict === "unresolved" ? "outline" : "default"}>
+                    {scanRes.verdict}
+                  </Badge>
+                  {scanRes.confidence && <span className="text-xs text-muted-foreground">confidence: {scanRes.confidence}</span>}
+                  {scanRes.commitShare != null && <span className="text-xs text-muted-foreground">{scanRes.commitShare}% of {scanRes.commits} commits by Lovable</span>}
+                </div>
+                {scanRes.phaseMix && scanRes.lovableCommits != null && scanRes.lovableCommits > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {Object.entries(scanRes.phaseMix).map(([p, v]) => v != null && (
+                      <span key={p} className="rounded-full bg-muted px-2 py-0.5 text-xs">{p} {v}%</span>
+                    ))}
+                  </div>)}
+                {scanRes.signals && scanRes.signals.length > 0 && (
+                  <ul className="list-inside list-disc text-xs text-muted-foreground">
+                    {scanRes.signals.map((s) => <li key={s}>{s}</li>)}
+                  </ul>)}
+                <div className="flex flex-wrap gap-3 text-xs">
+                  {scanRes.repoUrl && <a href={scanRes.repoUrl} target="_blank" rel="noreferrer" className="text-primary underline">{scanRes.repo}</a>}
+                  {scanRes.lovableProjectId && <span className="text-muted-foreground">project {scanRes.lovableProjectId.slice(0, 8)}…</span>}
+                </div>
+                {scanRes.note && <p className="text-xs text-muted-foreground">{scanRes.note}</p>}
+                {sub.scanned_at && <p className="text-xs text-muted-foreground">Scanned {new Date(sub.scanned_at).toLocaleString()}</p>}
+              </div>
+            ) : (
+              <p className="mt-2 text-xs text-muted-foreground">
+                Checks the project's GitHub repo (resolving Lovable project links automatically) for Lovable fingerprints and bot commits. Takes a few seconds.
+              </p>
+            )}
           </div>
           <div className="grid gap-3 sm:grid-cols-[180px_1fr]">
             <label className="block font-medium">Review status
