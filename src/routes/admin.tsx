@@ -534,6 +534,9 @@ function exportCsv(board: ReturnType<typeof computeLeaderboard>, tracks: ReturnT
 type Submission = {
   id: string; name: string; email: string; project_name: string; track_id: number; lovable_url: string; created_at: string;
   description: string; review_status: string; notes: string; ai_summary: string; ai_summary_at: string | null;
+  github_repo: string; lovable_project_id: string; scan_verdict: string; scan_confidence: string;
+  lovable_commit_share: number | null; phase_breakdown: Record<string, number | null>; scan_signals: string[];
+  scan_note: string; scanned_at: string | null;
 };
 const REVIEW_STATUSES = [
   { v: "new", label: "New" }, { v: "reviewing", label: "Reviewing" }, { v: "follow_up", label: "Needs follow-up" },
@@ -576,8 +579,8 @@ function SubmissionsTab({ code, tracks }: { code: string; tracks: Track[] }) {
   );
   const csv = () => {
     const esc = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
-    const rows = [["submitted_at", "name", "email", "project", "track", "project_url", "review_status", "notes"].join(",")];
-    filtered.forEach((s) => rows.push([new Date(s.created_at).toISOString(), s.name, s.email, s.project_name, trackNameOf(s.track_id), s.lovable_url, statusLabel(s.review_status), s.notes].map(esc).join(",")));
+    const rows = [["submitted_at", "name", "email", "project", "track", "project_url", "review_status", "notes", "scan_verdict", "scan_confidence", "lovable_commit_pct", "github_repo", "lovable_project_id", "scan_note"].join(",")];
+    filtered.forEach((s) => rows.push([new Date(s.created_at).toISOString(), s.name, s.email, s.project_name, trackNameOf(s.track_id), s.lovable_url, statusLabel(s.review_status), s.notes, s.scan_verdict, s.scan_confidence, s.lovable_commit_share ?? "", s.github_repo, s.lovable_project_id, s.scan_note].map(esc).join(",")));
     const a = document.createElement("a");
     a.href = URL.createObjectURL(new Blob([rows.join("\n")], { type: "text/csv" }));
     a.download = "hfh-submissions.csv";
