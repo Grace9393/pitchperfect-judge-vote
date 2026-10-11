@@ -72,7 +72,7 @@ async function readFile(repo: string, path: string, token: string): Promise<stri
 function parseLovable(s: string): string | null {
   const clean = s.trim().replace(/^["']|["']$/g, "");
   const m = LOVABLE_URL_RE.exec(clean);
-  if (m) return m[1].toLowerCase();
+  if (m?.[1]) return m[1].toLowerCase();
   return UUID_RE.test(clean) ? clean.toLowerCase() : null;
 }
 
@@ -80,8 +80,8 @@ function parseRepo(s: string): string | null {
   const clean = s.trim().replace(/^["']|["']$/g, "");
   if (LOVABLE_URL_RE.test(clean)) return null;
   let m = /github\.com[/:]([^/\s]+)\/([^/\s#?]+)/.exec(clean);
-  if (!m) m = /^([\w.-]+)\/([\w.-]+)$/.exec(clean) as RegExpExecArray | null;
-  if (!m) return null;
+  if (!m) m = /^([\w.-]+)\/([\w.-]+)$/.exec(clean);
+  if (!m?.[1] || !m[2]) return null;
   return `${m[1]}/${m[2].replace(/\.git$/, "")}`;
 }
 
@@ -174,7 +174,7 @@ export const scanSubmission = createServerFn({ method: "POST" })
     if (readme) {
       const txt = await readFile(repo, readme, token);
       const m = LOVABLE_URL_RE.exec(txt);
-      if (m) { add("README: lovable.dev/projects link", 4); lovableId ??= m[1].toLowerCase(); }
+      if (m?.[1]) { add("README: lovable.dev/projects link", 4); lovableId ??= m[1].toLowerCase(); }
       else if (/lovable/i.test(txt)) add("README mentions Lovable", 2);
     }
     const html = shallowest(paths, new Set(["index.html"]));

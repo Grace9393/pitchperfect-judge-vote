@@ -643,9 +643,10 @@ function SubmissionsTab({ code, tracks }: { code: string; tracks: Track[] }) {
 }
 
 type ScanResult = {
-  repo?: string; repoUrl?: string; lovableProjectId?: string; verdict?: string; confidence?: string;
-  commits?: number; lovableCommits?: number; commitShare?: number | null;
-  phaseMix?: Record<string, number | null>; signals?: string[]; note?: string;
+  repo?: string | undefined; repoUrl?: string | undefined; lovableProjectId?: string | undefined;
+  verdict?: string | undefined; confidence?: string | undefined;
+  commits?: number | undefined; lovableCommits?: number | undefined; commitShare?: number | null | undefined;
+  phaseMix?: Record<string, number | null> | undefined; signals?: string[] | undefined; note?: string | undefined;
 };
 
 function ReviewDialog({ code, sub, tracks, onClose }: { code: string; sub: Submission; tracks: Track[]; onClose: () => void }) {
