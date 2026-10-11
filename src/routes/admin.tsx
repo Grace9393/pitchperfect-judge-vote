@@ -655,7 +655,7 @@ function ReviewDialog({ code, sub, tracks, onClose }: { code: string; sub: Submi
   const save = async () => {
     setBusy("save");
     const patch: Record<string, string> = { review_status: f.status, notes: f.notes, description: f.description };
-    if (f.summary !== sub.ai_summary) patch.ai_summary = f.summary;
+    if (f.summary !== sub.ai_summary) patch["ai_summary"] = f.summary;
     const { error } = await supabase.rpc("admin_update_submission", { p_code: code, p_id: sub.id, p_patch: patch });
     setBusy(null);
     if (error) return void toast.error(errMsg(error));

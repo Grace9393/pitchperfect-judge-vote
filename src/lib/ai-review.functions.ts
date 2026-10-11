@@ -22,13 +22,13 @@ export const summarizeSubmission = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => Input.parse(d))
   .handler(async ({ data }) => {
     const { createClient } = await import("@supabase/supabase-js");
-    const sb = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_PUBLISHABLE_KEY ?? process.env.VITE_SUPABASE_PUBLISHABLE_KEY!, {
+    const sb = createClient(process.env['SUPABASE_URL']!, process.env['SUPABASE_PUBLISHABLE_KEY'] ?? process.env['VITE_SUPABASE_PUBLISHABLE_KEY']!, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
     const { data: ok } = await sb.rpc("admin_login", { p_code: data.code });
     if (!ok) return { error: "Organizer access required", text: "" };
 
-    const apiKey = process.env.LOVABLE_API_KEY;
+    const apiKey = process.env['LOVABLE_API_KEY'];
     if (!apiKey) return { error: "AI is not configured", text: "" };
 
     const { createOpenAI } = await import("@ai-sdk/openai");
