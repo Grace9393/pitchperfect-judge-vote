@@ -2,6 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { useServerFn } from "@tanstack/react-start";
+import { summarizeSubmission } from "@/lib/ai-review.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { CodeGate } from "@/components/CodeGate";
 import { Button } from "@/components/ui/button";
@@ -529,12 +531,24 @@ function exportCsv(board: ReturnType<typeof computeLeaderboard>, tracks: ReturnT
   a.click();
 }
 
-type Submission = { id: string; name: string; email: string; project_name: string; track_id: number; lovable_url: string; created_at: string };
+type Submission = {
+  id: string; name: string; email: string; project_name: string; track_id: number; lovable_url: string; created_at: string;
+  description: string; review_status: string; notes: string; ai_summary: string; ai_summary_at: string | null;
+};
+const REVIEW_STATUSES = [
+  { v: "new", label: "New" }, { v: "reviewing", label: "Reviewing" }, { v: "follow_up", label: "Needs follow-up" },
+  { v: "approved", label: "Approved" }, { v: "rejected", label: "Rejected" },
+];
+const statusLabel = (v: string) => REVIEW_STATUSES.find((s) => s.v === v)?.label ?? v;
+type SortKey = "created_at" | "track" | "project";
 
 function SubmissionsTab({ code, tracks }: { code: string; tracks: Track[] }) {
   const qc = useQueryClient();
   const [q, setQ] = useState("");
   const [trackFilter, setTrackFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [sort, setSort] = useState<{ key: SortKey; dir: 1 | -1 }>({ key: "created_at", dir: -1 });
+  const [open, setOpen] = useState<Submission | null>(null);
   const list = useQuery({
     queryKey: ["hub", "subs", code],
     queryFn: async () => ((await supabase.rpc("admin_list_submissions", { p_code: code })).data ?? []) as unknown as Submission[],
@@ -543,51 +557,162 @@ function SubmissionsTab({ code, tracks }: { code: string; tracks: Track[] }) {
   const trackNameOf = (id: number) => tracks.find((t) => t.id === id)?.name_en ?? "";
   const filtered = (list.data ?? []).filter((s) => {
     if (trackFilter && String(s.track_id) !== trackFilter) return false;
+    if (statusFilter && s.review_status !== statusFilter) return false;
     const needle = q.trim().toLowerCase();
     if (!needle) return true;
-    return [s.name, s.email, s.project_name, s.lovable_url, trackNameOf(s.track_id)].some((v) => v.toLowerCase().includes(needle));
+    return [s.name, s.email, s.project_name, s.lovable_url, trackNameOf(s.track_id), s.notes].some((v) => (v ?? "").toLowerCase().includes(needle));
+  }).sort((a, b) => {
+    const val = (s: Submission) => sort.key === "created_at" ? s.created_at : sort.key === "track" ? trackNameOf(s.track_id) : s.project_name.toLowerCase();
+    const r = val(a) < val(b) ? -1 : val(a) > val(b) ? 1 : 0;
+    return r * sort.dir || (a.created_at < b.created_at ? 1 : -1);
   });
+  const toggleSort = (key: SortKey) => setSort((s) => s.key === key ? { key, dir: (s.dir * -1) as 1 | -1 } : { key, dir: key === "created_at" ? -1 : 1 });
+  const SortTh = ({ k, children }: { k: SortKey; children: string }) => (
+    <th className="py-2">
+      <button type="button" className="inline-flex items-center gap-1 font-medium hover:text-primary" onClick={() => toggleSort(k)}>
+        {children}<span className="text-xs text-muted-foreground">{sort.key === k ? (sort.dir === 1 ? "▲" : "▼") : "↕"}</span>
+      </button>
+    </th>
+  );
   const csv = () => {
     const esc = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
-    const rows = [["submitted_at", "name", "email", "project", "track", "project_url"].join(",")];
-    filtered.forEach((s) => rows.push([new Date(s.created_at).toISOString(), s.name, s.email, s.project_name, trackNameOf(s.track_id), s.lovable_url].map(esc).join(",")));
+    const rows = [["submitted_at", "name", "email", "project", "track", "project_url", "review_status", "notes"].join(",")];
+    filtered.forEach((s) => rows.push([new Date(s.created_at).toISOString(), s.name, s.email, s.project_name, trackNameOf(s.track_id), s.lovable_url, statusLabel(s.review_status), s.notes].map(esc).join(",")));
     const a = document.createElement("a");
     a.href = URL.createObjectURL(new Blob([rows.join("\n")], { type: "text/csv" }));
     a.download = "hfh-submissions.csv";
     a.click();
   };
+  const followUps = (list.data ?? []).filter((s) => s.review_status === "follow_up").length;
   return (
     <Card className="space-y-3 overflow-x-auto p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="font-medium">{filtered.length} of {list.data?.length ?? 0} submissions · public form at /submit</div>
+        <div className="font-medium">{filtered.length} of {list.data?.length ?? 0} submissions · {followUps} need follow-up · public form at /submit</div>
         <Button size="sm" variant="outline" onClick={csv}>Export CSV</Button>
       </div>
       <div className="flex flex-wrap gap-2">
-        <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search name, email, project…" className="h-9 w-64" />
+        <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search name, email, project, notes…" className="h-9 w-64" />
         <select value={trackFilter} onChange={(e) => setTrackFilter(e.target.value)} className="h-9 rounded-md border bg-background px-2 text-sm">
           <option value="">All tracks</option>
           {tracks.map((t) => <option key={t.id} value={t.id}>{t.name_en}</option>)}
         </select>
+        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="h-9 rounded-md border bg-background px-2 text-sm">
+          <option value="">All statuses</option>
+          {REVIEW_STATUSES.map((s) => <option key={s.v} value={s.v}>{s.label}</option>)}
+        </select>
       </div>
       <table className="w-full text-sm">
-        <thead><tr className="border-b text-left"><th className="py-2">Name</th><th>Email</th><th>Project</th><th>Track</th><th>Project URL</th><th>When</th><th /></tr></thead>
+        <thead><tr className="border-b text-left">
+          <th className="py-2">Name</th><SortTh k="project">Project</SortTh><SortTh k="track">Track</SortTh>
+          <th>Status</th><th>URL</th><SortTh k="created_at">Submitted</SortTh><th />
+        </tr></thead>
         <tbody>
           {filtered.map((s) => (
-            <tr key={s.id} className="border-b">
-              <td className="py-1.5">{s.name}</td><td>{s.email}</td><td>{s.project_name}</td>
-              <td className="text-xs">{tracks.find((t) => t.id === s.track_id)?.name_en}</td>
+            <tr key={s.id} className="border-b align-top">
+              <td className="py-1.5">{s.name}<div className="text-xs text-muted-foreground">{s.email}</div></td>
+              <td>{s.project_name}{s.notes && <div className="line-clamp-1 text-xs text-muted-foreground">📝 {s.notes}</div>}</td>
+              <td className="text-xs">{trackNameOf(s.track_id)}</td>
+              <td><Badge variant={s.review_status === "follow_up" ? "destructive" : s.review_status === "approved" ? "default" : "secondary"}>{statusLabel(s.review_status)}</Badge></td>
               <td><a href={s.lovable_url} target="_blank" rel="noreferrer" className="text-primary underline">link</a></td>
               <td className="text-xs text-muted-foreground">{new Date(s.created_at).toLocaleString()}</td>
-              <td><Button size="sm" variant="ghost" onClick={async () => {
-                if (!confirm(`Delete submission from ${s.name}?`)) return;
-                const { error } = await supabase.rpc("admin_delete_submission", { p_code: code, p_id: s.id });
-                if (error) toast.error(errMsg(error));
-                qc.invalidateQueries({ queryKey: ["hub", "subs"] });
-              }}>Delete</Button></td>
+              <td className="whitespace-nowrap">
+                <Button size="sm" variant="outline" onClick={() => setOpen(s)}>Review</Button>
+                <Button size="sm" variant="ghost" onClick={async () => {
+                  if (!confirm(`Delete submission from ${s.name}?`)) return;
+                  const { error } = await supabase.rpc("admin_delete_submission", { p_code: code, p_id: s.id });
+                  if (error) toast.error(errMsg(error));
+                  qc.invalidateQueries({ queryKey: ["hub", "subs"] });
+                }}>Delete</Button>
+              </td>
             </tr>
           ))}
         </tbody>
       </table>
+      {open && <ReviewDialog key={open.id} code={code} sub={open} tracks={tracks} onClose={() => { setOpen(null); qc.invalidateQueries({ queryKey: ["hub", "subs"] }); }} />}
     </Card>
+  );
+}
+
+function ReviewDialog({ code, sub, tracks, onClose }: { code: string; sub: Submission; tracks: Track[]; onClose: () => void }) {
+  const summarize = useServerFn(summarizeSubmission);
+  const [f, setF] = useState({
+    project: sub.project_name, description: sub.description ?? "", track: String(sub.track_id), url: sub.lovable_url,
+    status: sub.review_status, notes: sub.notes ?? "", summary: sub.ai_summary ?? "",
+  });
+  const [busy, setBusy] = useState<"ai" | "save" | null>(null);
+  const [aiErr, setAiErr] = useState<string | null>(null);
+  const runAi = async () => {
+    setBusy("ai"); setAiErr(null);
+    try {
+      const r = await summarize({ data: {
+        code, projectName: f.project, description: f.description, url: f.url,
+        track: tracks.find((t) => String(t.id) === f.track)?.name_en ?? "",
+      } });
+      if (r.error) setAiErr(r.error); else setF((p) => ({ ...p, summary: r.text }));
+    } catch (e) { setAiErr((e as Error).message); }
+    setBusy(null);
+  };
+  const save = async () => {
+    setBusy("save");
+    const patch: Record<string, string> = { review_status: f.status, notes: f.notes, description: f.description };
+    if (f.summary !== sub.ai_summary) patch.ai_summary = f.summary;
+    const { error } = await supabase.rpc("admin_update_submission", { p_code: code, p_id: sub.id, p_patch: patch });
+    setBusy(null);
+    if (error) return void toast.error(errMsg(error));
+    toast.success("Review saved");
+    onClose();
+  };
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
+        <DialogHeader><DialogTitle>Review: {sub.project_name}</DialogTitle></DialogHeader>
+        <div className="space-y-3 text-sm">
+          <div className="text-xs text-muted-foreground">{sub.name} · {sub.email} · submitted {new Date(sub.created_at).toLocaleString()}</div>
+          <label className="block font-medium">Project name
+            <Input value={f.project} maxLength={120} onChange={(e) => setF({ ...f, project: e.target.value })} className="mt-1" />
+          </label>
+          <label className="block font-medium">Description
+            <Textarea value={f.description} maxLength={2000} rows={3} placeholder="What does the project do? Paste from the deck or pitch."
+              onChange={(e) => setF({ ...f, description: e.target.value })} className="mt-1" />
+          </label>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="block font-medium">Track
+              <select value={f.track} onChange={(e) => setF({ ...f, track: e.target.value })} className="mt-1 h-10 w-full rounded-md border bg-background px-2">
+                {tracks.map((t) => <option key={t.id} value={t.id}>{t.name_en}</option>)}
+              </select>
+            </label>
+            <label className="block font-medium">Project URL
+              <Input value={f.url} maxLength={500} onChange={(e) => setF({ ...f, url: e.target.value })} className="mt-1" />
+            </label>
+          </div>
+          <div className="rounded-md border p-3">
+            <div className="flex items-center justify-between gap-2">
+              <div className="font-medium">AI summary & review considerations</div>
+              <Button size="sm" variant="secondary" onClick={runAi} disabled={busy !== null || !f.project.trim()}>
+                {busy === "ai" ? "Thinking…" : f.summary ? "Regenerate" : "Generate with AI"}
+              </Button>
+            </div>
+            {aiErr && <p className="mt-2 text-destructive">{aiErr}</p>}
+            {f.summary
+              ? <div className="mt-2 whitespace-pre-wrap text-sm">{f.summary.replace(/\*\*/g, "")}</div>
+              : <p className="mt-2 text-xs text-muted-foreground">Uses the details above. AI can't open the link — always check the project yourself.</p>}
+          </div>
+          <div className="grid gap-3 sm:grid-cols-[180px_1fr]">
+            <label className="block font-medium">Review status
+              <select value={f.status} onChange={(e) => setF({ ...f, status: e.target.value })} className="mt-1 h-10 w-full rounded-md border bg-background px-2">
+                {REVIEW_STATUSES.map((s) => <option key={s.v} value={s.v}>{s.label}</option>)}
+              </select>
+            </label>
+            <label className="block font-medium">Private notes (organizers only)
+              <Textarea value={f.notes} maxLength={5000} rows={3} onChange={(e) => setF({ ...f, notes: e.target.value })} className="mt-1" />
+            </label>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={onClose}>Cancel</Button>
+            <Button onClick={save} disabled={busy !== null}>{busy === "save" ? "Saving…" : "Save review"}</Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
