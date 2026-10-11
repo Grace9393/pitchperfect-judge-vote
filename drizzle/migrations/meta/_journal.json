@@ -50,6 +50,13 @@
       "when": 1791703146092,
       "tag": "0006_fix_admin_list_submissions",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1791703788301,
+      "tag": "0007_restrict_public_table_reads",
+      "breakpoints": true
     }
   ]
 }

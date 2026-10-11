@@ -484,6 +484,55 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      public_event_state: { Args: never; Returns: Json }
+      public_judges: {
+        Args: never
+        Returns: {
+          id: string
+          name: string
+          sort_order: number
+        }[]
+      }
+      public_teams: {
+        Args: never
+        Returns: {
+          built_with_lovable: boolean
+          created_at: string
+          deck_url: string
+          description: string
+          id: string
+          is_demo: boolean
+          members: string
+          name: string
+          project_name: string
+          sort_order: number
+          table_number: string
+          track_id: number | null
+          voter_group: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "teams"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      public_tracks: {
+        Args: never
+        Returns: {
+          data_sources: string
+          id: number
+          name_en: string
+          name_zh: string
+          sources: Json
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "tracks"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       submit_project: {
         Args: {
           p_email: string
