@@ -8,3 +8,5 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+- AI calls live in `src/lib/*.functions.ts` server functions that verify the admin code via `admin_login` before calling the AI Gateway — keeps the API key and prompts server-side.

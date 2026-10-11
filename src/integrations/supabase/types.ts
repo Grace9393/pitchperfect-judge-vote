@@ -168,30 +168,45 @@ export type Database = {
       }
       submissions: {
         Row: {
+          ai_summary: string
+          ai_summary_at: string | null
           created_at: string
+          description: string
           email: string
           id: string
           lovable_url: string
           name: string
+          notes: string
           project_name: string
+          review_status: string
           track_id: number
         }
         Insert: {
+          ai_summary?: string
+          ai_summary_at?: string | null
           created_at?: string
+          description?: string
           email: string
           id?: string
           lovable_url: string
           name: string
+          notes?: string
           project_name: string
+          review_status?: string
           track_id: number
         }
         Update: {
+          ai_summary?: string
+          ai_summary_at?: string | null
           created_at?: string
+          description?: string
           email?: string
           id?: string
           lovable_url?: string
           name?: string
+          notes?: string
           project_name?: string
+          review_status?: string
           track_id?: number
         }
         Relationships: [
@@ -392,6 +407,10 @@ export type Database = {
       }
       admin_update_state: {
         Args: { p_code: string; p_patch: Json }
+        Returns: undefined
+      }
+      admin_update_submission: {
+        Args: { p_code: string; p_id: string; p_patch: Json }
         Returns: undefined
       }
       admin_update_track: {

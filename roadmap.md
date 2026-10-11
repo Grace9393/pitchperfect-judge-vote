@@ -8,3 +8,6 @@
 - [x] Attendee submission form (name, email, project name, track, Lovable URL) + admin list
 - [x] Submissions CSV with ISO timestamps + track names; search & track filter in Admin
 - [x] Submission form accepts custom-domain https URLs
+- [x] AI summary + review considerations for submissions
+- [x] Submission review statuses + private notes
+- [x] Sortable submission columns (time, track, project)
