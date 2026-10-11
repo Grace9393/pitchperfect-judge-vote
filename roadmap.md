@@ -11,3 +11,4 @@
 - [x] AI summary + review considerations for submissions
 - [x] Submission review statuses + private notes
 - [x] Sortable submission columns (time, track, project)
+- [x] Repo scan integration (lovable_scan.py ported to TS, GitHub API, admin Review panel)

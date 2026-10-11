@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { summarizeSubmission } from "@/lib/ai-review.functions";
+import { scanSubmission } from "@/lib/repo-scan.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { CodeGate } from "@/components/CodeGate";
 import { Button } from "@/components/ui/button";
@@ -534,6 +535,9 @@ function exportCsv(board: ReturnType<typeof computeLeaderboard>, tracks: ReturnT
 type Submission = {
   id: string; name: string; email: string; project_name: string; track_id: number; lovable_url: string; created_at: string;
   description: string; review_status: string; notes: string; ai_summary: string; ai_summary_at: string | null;
+  github_repo: string; lovable_project_id: string; scan_verdict: string; scan_confidence: string;
+  lovable_commit_share: number | null; phase_breakdown: Record<string, number | null>; scan_signals: string[];
+  scan_note: string; scanned_at: string | null;
 };
 const REVIEW_STATUSES = [
   { v: "new", label: "New" }, { v: "reviewing", label: "Reviewing" }, { v: "follow_up", label: "Needs follow-up" },
@@ -576,8 +580,8 @@ function SubmissionsTab({ code, tracks }: { code: string; tracks: Track[] }) {
   );
   const csv = () => {
     const esc = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
-    const rows = [["submitted_at", "name", "email", "project", "track", "project_url", "review_status", "notes"].join(",")];
-    filtered.forEach((s) => rows.push([new Date(s.created_at).toISOString(), s.name, s.email, s.project_name, trackNameOf(s.track_id), s.lovable_url, statusLabel(s.review_status), s.notes].map(esc).join(",")));
+    const rows = [["submitted_at", "name", "email", "project", "track", "project_url", "review_status", "notes", "scan_verdict", "scan_confidence", "lovable_commit_pct", "github_repo", "lovable_project_id", "scan_note"].join(",")];
+    filtered.forEach((s) => rows.push([new Date(s.created_at).toISOString(), s.name, s.email, s.project_name, trackNameOf(s.track_id), s.lovable_url, statusLabel(s.review_status), s.notes, s.scan_verdict, s.scan_confidence, s.lovable_commit_share ?? "", s.github_repo, s.lovable_project_id, s.scan_note].map(esc).join(",")));
     const a = document.createElement("a");
     a.href = URL.createObjectURL(new Blob([rows.join("\n")], { type: "text/csv" }));
     a.download = "hfh-submissions.csv";
@@ -610,7 +614,12 @@ function SubmissionsTab({ code, tracks }: { code: string; tracks: Track[] }) {
           {filtered.map((s) => (
             <tr key={s.id} className="border-b align-top">
               <td className="py-1.5">{s.name}<div className="text-xs text-muted-foreground">{s.email}</div></td>
-              <td>{s.project_name}{s.notes && <div className="line-clamp-1 text-xs text-muted-foreground">📝 {s.notes}</div>}</td>
+              <td>{s.project_name}
+                {s.scan_verdict && s.scan_verdict !== "error" && s.scan_verdict !== "unresolved" && (
+                  <Badge variant={s.scan_verdict === "No evidence" ? "outline" : "default"} className="ml-1 text-[10px]">
+                    {s.scan_verdict === "No evidence" ? "no Lovable evidence" : `Lovable ✓${s.lovable_commit_share != null ? ` ${s.lovable_commit_share}%` : ""}`}
+                  </Badge>)}
+                {s.notes && <div className="line-clamp-1 text-xs text-muted-foreground">📝 {s.notes}</div>}</td>
               <td className="text-xs">{trackNameOf(s.track_id)}</td>
               <td><Badge variant={s.review_status === "follow_up" ? "destructive" : s.review_status === "approved" ? "default" : "secondary"}>{statusLabel(s.review_status)}</Badge></td>
               <td><a href={s.lovable_url} target="_blank" rel="noreferrer" className="text-primary underline">link</a></td>
@@ -633,14 +642,37 @@ function SubmissionsTab({ code, tracks }: { code: string; tracks: Track[] }) {
   );
 }
 
+type ScanResult = {
+  repo?: string | undefined; repoUrl?: string | undefined; lovableProjectId?: string | undefined;
+  verdict?: string | undefined; confidence?: string | undefined;
+  commits?: number | undefined; lovableCommits?: number | undefined; commitShare?: number | null | undefined;
+  phaseMix?: Record<string, number | null> | undefined; signals?: string[] | undefined; note?: string | undefined;
+};
+
 function ReviewDialog({ code, sub, tracks, onClose }: { code: string; sub: Submission; tracks: Track[]; onClose: () => void }) {
   const summarize = useServerFn(summarizeSubmission);
+  const scan = useServerFn(scanSubmission);
   const [f, setF] = useState({
     project: sub.project_name, description: sub.description ?? "", track: String(sub.track_id), url: sub.lovable_url,
     status: sub.review_status, notes: sub.notes ?? "", summary: sub.ai_summary ?? "",
   });
-  const [busy, setBusy] = useState<"ai" | "save" | null>(null);
+  const [busy, setBusy] = useState<"ai" | "save" | "scan" | null>(null);
   const [aiErr, setAiErr] = useState<string | null>(null);
+  const [scanErr, setScanErr] = useState<string | null>(null);
+  const [scanRes, setScanRes] = useState<ScanResult | null>(
+    sub.scan_verdict ? {
+      repo: sub.github_repo, repoUrl: sub.github_repo ? `https://github.com/${sub.github_repo}` : undefined,
+      lovableProjectId: sub.lovable_project_id, verdict: sub.scan_verdict, confidence: sub.scan_confidence,
+      commitShare: sub.lovable_commit_share, phaseMix: sub.phase_breakdown, signals: sub.scan_signals, note: sub.scan_note,
+    } : null);
+  const runScan = async () => {
+    setBusy("scan"); setScanErr(null);
+    try {
+      const r = await scan({ data: { code, submissionId: sub.id, target: f.url } });
+      if (r.error) setScanErr(r.error); else setScanRes(r.result as ScanResult);
+    } catch (e) { setScanErr((e as Error).message); }
+    setBusy(null);
+  };
   const runAi = async () => {
     setBusy("ai"); setAiErr(null);
     try {
@@ -696,6 +728,46 @@ function ReviewDialog({ code, sub, tracks, onClose }: { code: string; sub: Submi
             {f.summary
               ? <div className="mt-2 whitespace-pre-wrap text-sm">{f.summary.replace(/\*\*/g, "")}</div>
               : <p className="mt-2 text-xs text-muted-foreground">Uses the details above. AI can't open the link — always check the project yourself.</p>}
+          </div>
+          <div className="rounded-md border p-3">
+            <div className="flex items-center justify-between gap-2">
+              <div className="font-medium">Lovable usage scan</div>
+              <Button size="sm" variant="secondary" onClick={runScan} disabled={busy !== null || !f.url.trim()}>
+                {busy === "scan" ? "Scanning…" : scanRes ? "Re-scan repository" : "Scan repository"}
+              </Button>
+            </div>
+            {scanErr && <p className="mt-2 text-destructive">{scanErr}</p>}
+            {scanRes ? (
+              <div className="mt-2 space-y-1.5 text-sm">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge variant={scanRes.verdict === "No evidence" || scanRes.verdict === "error" || scanRes.verdict === "unresolved" ? "outline" : "default"}>
+                    {scanRes.verdict}
+                  </Badge>
+                  {scanRes.confidence && <span className="text-xs text-muted-foreground">confidence: {scanRes.confidence}</span>}
+                  {scanRes.commitShare != null && <span className="text-xs text-muted-foreground">{scanRes.commitShare}% of {scanRes.commits} commits by Lovable</span>}
+                </div>
+                {scanRes.phaseMix && scanRes.lovableCommits != null && scanRes.lovableCommits > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {Object.entries(scanRes.phaseMix).map(([p, v]) => v != null && (
+                      <span key={p} className="rounded-full bg-muted px-2 py-0.5 text-xs">{p} {v}%</span>
+                    ))}
+                  </div>)}
+                {scanRes.signals && scanRes.signals.length > 0 && (
+                  <ul className="list-inside list-disc text-xs text-muted-foreground">
+                    {scanRes.signals.map((s) => <li key={s}>{s}</li>)}
+                  </ul>)}
+                <div className="flex flex-wrap gap-3 text-xs">
+                  {scanRes.repoUrl && <a href={scanRes.repoUrl} target="_blank" rel="noreferrer" className="text-primary underline">{scanRes.repo}</a>}
+                  {scanRes.lovableProjectId && <span className="text-muted-foreground">project {scanRes.lovableProjectId.slice(0, 8)}…</span>}
+                </div>
+                {scanRes.note && <p className="text-xs text-muted-foreground">{scanRes.note}</p>}
+                {sub.scanned_at && <p className="text-xs text-muted-foreground">Scanned {new Date(sub.scanned_at).toLocaleString()}</p>}
+              </div>
+            ) : (
+              <p className="mt-2 text-xs text-muted-foreground">
+                Checks the project's GitHub repo (resolving Lovable project links automatically) for Lovable fingerprints and bot commits. Takes a few seconds.
+              </p>
+            )}
           </div>
           <div className="grid gap-3 sm:grid-cols-[180px_1fr]">
             <label className="block font-medium">Review status

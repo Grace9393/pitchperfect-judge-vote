@@ -36,6 +36,20 @@
       "when": 1791694517304,
       "tag": "0004_submission_review",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1791702958361,
+      "tag": "0005_submission_scans",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1791703146092,
+      "tag": "0006_fix_admin_list_submissions",
+      "breakpoints": true
     }
   ]
 }

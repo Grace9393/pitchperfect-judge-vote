@@ -173,12 +173,21 @@ export type Database = {
           created_at: string
           description: string
           email: string
+          github_repo: string
           id: string
+          lovable_commit_share: number | null
+          lovable_project_id: string
           lovable_url: string
           name: string
           notes: string
+          phase_breakdown: Json
           project_name: string
           review_status: string
+          scan_confidence: string
+          scan_note: string
+          scan_signals: Json
+          scan_verdict: string
+          scanned_at: string | null
           track_id: number
         }
         Insert: {
@@ -187,12 +196,21 @@ export type Database = {
           created_at?: string
           description?: string
           email: string
+          github_repo?: string
           id?: string
+          lovable_commit_share?: number | null
+          lovable_project_id?: string
           lovable_url: string
           name: string
           notes?: string
+          phase_breakdown?: Json
           project_name: string
           review_status?: string
+          scan_confidence?: string
+          scan_note?: string
+          scan_signals?: Json
+          scan_verdict?: string
+          scanned_at?: string | null
           track_id: number
         }
         Update: {
@@ -201,12 +219,21 @@ export type Database = {
           created_at?: string
           description?: string
           email?: string
+          github_repo?: string
           id?: string
+          lovable_commit_share?: number | null
+          lovable_project_id?: string
           lovable_url?: string
           name?: string
           notes?: string
+          phase_breakdown?: Json
           project_name?: string
           review_status?: string
+          scan_confidence?: string
+          scan_note?: string
+          scan_signals?: Json
+          scan_verdict?: string
+          scanned_at?: string | null
           track_id?: number
         }
         Relationships: [
@@ -395,6 +422,10 @@ export type Database = {
       }
       admin_reset: {
         Args: { p_code: string; p_what: string }
+        Returns: undefined
+      }
+      admin_save_scan: {
+        Args: { p_code: string; p_id: string; p_patch: Json }
         Returns: undefined
       }
       admin_set_admin_code: {
