@@ -613,7 +613,12 @@ function SubmissionsTab({ code, tracks }: { code: string; tracks: Track[] }) {
           {filtered.map((s) => (
             <tr key={s.id} className="border-b align-top">
               <td className="py-1.5">{s.name}<div className="text-xs text-muted-foreground">{s.email}</div></td>
-              <td>{s.project_name}{s.notes && <div className="line-clamp-1 text-xs text-muted-foreground">📝 {s.notes}</div>}</td>
+              <td>{s.project_name}
+                {s.scan_verdict && s.scan_verdict !== "error" && s.scan_verdict !== "unresolved" && (
+                  <Badge variant={s.scan_verdict === "No evidence" ? "outline" : "default"} className="ml-1 text-[10px]">
+                    {s.scan_verdict === "No evidence" ? "no Lovable evidence" : `Lovable ✓${s.lovable_commit_share != null ? ` ${s.lovable_commit_share}%` : ""}`}
+                  </Badge>)}
+                {s.notes && <div className="line-clamp-1 text-xs text-muted-foreground">📝 {s.notes}</div>}</td>
               <td className="text-xs">{trackNameOf(s.track_id)}</td>
               <td><Badge variant={s.review_status === "follow_up" ? "destructive" : s.review_status === "approved" ? "default" : "secondary"}>{statusLabel(s.review_status)}</Badge></td>
               <td><a href={s.lovable_url} target="_blank" rel="noreferrer" className="text-primary underline">link</a></td>
@@ -636,14 +641,36 @@ function SubmissionsTab({ code, tracks }: { code: string; tracks: Track[] }) {
   );
 }
 
+type ScanResult = {
+  repo?: string; repoUrl?: string; lovableProjectId?: string; verdict?: string; confidence?: string;
+  commits?: number; lovableCommits?: number; commitShare?: number | null;
+  phaseMix?: Record<string, number | null>; signals?: string[]; note?: string;
+};
+
 function ReviewDialog({ code, sub, tracks, onClose }: { code: string; sub: Submission; tracks: Track[]; onClose: () => void }) {
   const summarize = useServerFn(summarizeSubmission);
+  const scan = useServerFn(scanSubmission);
   const [f, setF] = useState({
     project: sub.project_name, description: sub.description ?? "", track: String(sub.track_id), url: sub.lovable_url,
     status: sub.review_status, notes: sub.notes ?? "", summary: sub.ai_summary ?? "",
   });
-  const [busy, setBusy] = useState<"ai" | "save" | null>(null);
+  const [busy, setBusy] = useState<"ai" | "save" | "scan" | null>(null);
   const [aiErr, setAiErr] = useState<string | null>(null);
+  const [scanErr, setScanErr] = useState<string | null>(null);
+  const [scanRes, setScanRes] = useState<ScanResult | null>(
+    sub.scan_verdict ? {
+      repo: sub.github_repo, repoUrl: sub.github_repo ? `https://github.com/${sub.github_repo}` : undefined,
+      lovableProjectId: sub.lovable_project_id, verdict: sub.scan_verdict, confidence: sub.scan_confidence,
+      commitShare: sub.lovable_commit_share, phaseMix: sub.phase_breakdown, signals: sub.scan_signals, note: sub.scan_note,
+    } : null);
+  const runScan = async () => {
+    setBusy("scan"); setScanErr(null);
+    try {
+      const r = await scan({ data: { code, submissionId: sub.id, target: f.url } });
+      if (r.error) setScanErr(r.error); else setScanRes(r.result as ScanResult);
+    } catch (e) { setScanErr((e as Error).message); }
+    setBusy(null);
+  };
   const runAi = async () => {
     setBusy("ai"); setAiErr(null);
     try {
