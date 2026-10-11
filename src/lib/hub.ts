@@ -92,19 +92,20 @@ export function useHubData(adminCode?: string | null) {
 
   const tracks = useQuery({
     queryKey: ["hub", "tracks"],
-    queryFn: async () => ((await supabase.from("tracks").select("*").order("id")).data ?? []) as Track[],
+    queryFn: async () => ((await supabase.rpc("public_tracks")).data ?? []) as unknown as Track[],
   });
   const teams = useQuery({
     queryKey: ["hub", "teams"],
-    queryFn: async () => ((await supabase.from("teams").select("*").order("sort_order")).data ?? []) as Team[],
+    queryFn: async () => ((await supabase.rpc("public_teams")).data ?? []) as unknown as Team[],
   });
   const judges = useQuery({
     queryKey: ["hub", "judges"],
-    queryFn: async () => ((await supabase.from("judges").select("id,name,sort_order").order("sort_order")).data ?? []) as Judge[],
+    queryFn: async () => ((await supabase.rpc("public_judges")).data ?? []) as unknown as Judge[],
   });
   const state = useQuery({
     queryKey: ["hub", "state"],
-    queryFn: async () => (await supabase.from("event_state").select("*").eq("id", 1).single()).data as unknown as EventState,
+    queryFn: async () => (await supabase.rpc("public_event_state")).data as unknown as EventState,
+    refetchInterval: 5000,
   });
   const results = useQuery({
     queryKey: ["hub", "results", adminCode ?? ""],
