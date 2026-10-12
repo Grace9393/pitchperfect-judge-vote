@@ -295,28 +295,51 @@ function CodesCard({ code, onAdminChanged }: { code: string; onAdminChanged: () 
     crypto.getRandomValues(b);
     return Array.from(b, (x) => a[x % a.length]).join("").replace(/(.{5})/, "$1-");
   };
+  const [saved, setSaved] = useState<Record<string, string>>({});
+  const [show, setShow] = useState<Record<string, boolean>>({});
+  const copy = async (v: string) => {
+    try { await navigator.clipboard.writeText(v); toast.success("Copied"); } catch { /* ignore */ }
+  };
   const save = async (key: string) => {
     const v = drafts[key]?.trim();
     if (!v) return;
+    if (key === "admin" && !confirm(`Set the new admin code to "${v}"? You'll need it to sign in again.`)) return;
     const { error } = key === "admin"
       ? await supabase.rpc("admin_set_admin_code", { p_code: code, p_new: v })
       : await supabase.rpc("admin_set_judge_code", { p_code: code, p_judge: key, p_new: v });
     if (error) { toast.error(errMsg(error)); return; }
-    toast.success("Code updated. Share it privately — it can't be shown again.");
+    toast.success("Code updated");
     setDrafts((d) => ({ ...d, [key]: "" }));
     if (key === "admin") onAdminChanged();
-    else qc.invalidateQueries({ queryKey: ["hub", "codes"] });
+    else { setSaved((s) => ({ ...s, [key]: v })); qc.invalidateQueries({ queryKey: ["hub", "codes"] }); }
   };
-  const row = (key: string, label: string, isDefault: boolean | undefined, min: number) => (
-    <div key={key} className="flex flex-wrap items-center gap-2">
-      <span className="w-40 text-sm font-medium">{label}</span>
-      {isDefault ? <Badge variant="destructive">placeholder</Badge> : <Badge variant="secondary">custom</Badge>}
-      <Input className="w-48 font-mono" placeholder={`New code (min ${min})`} value={drafts[key] ?? ""}
-        onChange={(e) => setDrafts((d) => ({ ...d, [key]: e.target.value }))} />
-      <Button size="sm" variant="outline" onClick={() => setDrafts((d) => ({ ...d, [key]: gen() }))}>Generate</Button>
-      <Button size="sm" disabled={(drafts[key]?.trim().length ?? 0) < min} onClick={() => save(key)}>Save</Button>
-    </div>
-  );
+  const row = (key: string, label: string, isDefault: boolean | undefined, min: number) => {
+    const v = drafts[key] ?? "";
+    const len = v.trim().length;
+    return (
+      <div key={key} className="space-y-2 rounded-md border p-3">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium">{label}</span>
+          {isDefault ? <Badge variant="destructive">placeholder</Badge> : <Badge variant="secondary">custom</Badge>}
+        </div>
+        <form className="flex flex-wrap items-center gap-2" onSubmit={(e) => { e.preventDefault(); if (len >= min) save(key); }}>
+          <Input className="min-w-0 flex-1 font-mono" type={show[key] === false ? "password" : "text"} autoComplete="off"
+            placeholder={`Type a new code (min ${min} characters)`} value={v}
+            onChange={(e) => setDrafts((d) => ({ ...d, [key]: e.target.value.toUpperCase() }))} />
+          <Button type="button" size="sm" variant="outline" onClick={() => { const g = gen(); setDrafts((d) => ({ ...d, [key]: g })); copy(g); }}>Generate</Button>
+          {v && <Button type="button" size="sm" variant="ghost" onClick={() => copy(v)}>Copy</Button>}
+          <Button type="submit" size="sm" disabled={len < min}>Save</Button>
+        </form>
+        {v && len < min && <p className="text-xs text-muted-foreground">{min - len} more character(s) needed</p>}
+        {saved[key] && (
+          <p className="text-xs text-muted-foreground">
+            New code saved: <span className="font-mono text-foreground">{saved[key]}</span>{" "}
+            <button className="text-primary underline" onClick={() => copy(saved[key]!)}>copy</button> — share it privately; it won't be shown after you leave this page.
+          </p>
+        )}
+      </div>
+    );
+  };
   return (
     <Card className="space-y-3 p-4">
       <div className="font-medium">Access codes</div>
