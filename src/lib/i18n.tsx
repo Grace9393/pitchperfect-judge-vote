@@ -10,6 +10,7 @@ const dict = {
   vote: { en: "Vote", zh: "觀眾投票" },
   admin: { en: "Admin", zh: "管理" },
   results: { en: "Results", zh: "結果" },
+  guide: { en: "Guide", zh: "指南" },
   home: { en: "Home", zh: "首頁" },
   enterCode: { en: "Enter your access code", zh: "請輸入存取碼" },
   enterVoterCode: { en: "Enter your voter code", zh: "請輸入投票碼" },

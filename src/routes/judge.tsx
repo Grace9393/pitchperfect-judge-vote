@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useActiveEvent } from "@/lib/events";
 import { CodeGate } from "@/components/CodeGate";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -13,10 +14,12 @@ import { CRITERIA, errMsg, normalizeWeights, trackName, useHubData, useStoredCod
 export const Route = createFileRoute("/judge")({
   head: () => ({
     meta: [
-      { title: "Judge Scoring — Hack for Humanity Taiwan" },
-      { name: "description", content: "Judges score live pitches at Hack for Humanity Taiwan with a 90-second timer." },
-      { property: "og:title", content: "Judge Scoring — Hack for Humanity Taiwan" },
-      { property: "og:description", content: "Live pitch scoring for Hack for Humanity Taiwan judges." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { title: "Judge Scoring — Event Judging Hub" },
+      { name: "description", content: "Judges score live pitches at Event Judging Hub with a 90-second timer." },
+      { property: "og:title", content: "Judge Scoring — Event Judging Hub" },
+      { property: "og:description", content: "Live pitch scoring for Event Judging Hub judges." },
     ],
   }),
   component: JudgePage,
@@ -53,6 +56,7 @@ function Timer({ serverStart }: { serverStart: string | null }) {
 
 function JudgePage() {
   const { t, lang } = useT();
+  const event = useActiveEvent();
   const [code, setCode, ready] = useStoredCode("hfh-judge");
   const [judge, setJudge] = useState<{ id: string; name: string } | null>(null);
   const { state, teams, tracks } = useHubData();
@@ -64,7 +68,7 @@ function JudgePage() {
       if (data) setJudge(data as { id: string; name: string });
       else setCode(null);
     });
-  }, [code]);
+  }, [code, event?.id]);
 
   const mine = useQuery({
     queryKey: ["hub", "mine", code],

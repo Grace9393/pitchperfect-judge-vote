@@ -35,6 +35,66 @@ export type Database = {
         }
         Relationships: []
       }
+      event_runtimes: {
+        Row: {
+          current_team_id: string | null
+          demo_mode: boolean
+          event_id: string
+          id: number
+          phase: string
+          scores_revealed: boolean
+          scoring_open: boolean
+          timer_started_at: string | null
+          updated_at: string
+          version: number
+          voting_open: boolean
+          weights: Json
+        }
+        Insert: {
+          current_team_id?: string | null
+          demo_mode?: boolean
+          event_id: string
+          id?: number
+          phase?: string
+          scores_revealed?: boolean
+          scoring_open?: boolean
+          timer_started_at?: string | null
+          updated_at?: string
+          version?: number
+          voting_open?: boolean
+          weights?: Json
+        }
+        Update: {
+          current_team_id?: string | null
+          demo_mode?: boolean
+          event_id?: string
+          id?: number
+          phase?: string
+          scores_revealed?: boolean
+          scoring_open?: boolean
+          timer_started_at?: string | null
+          updated_at?: string
+          version?: number
+          voting_open?: boolean
+          weights?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_runtimes_current_team_id_fkey"
+            columns: ["current_team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_runtimes_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: true
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       event_state: {
         Row: {
           current_team_id: string | null
@@ -85,10 +145,56 @@ export type Database = {
           },
         ]
       }
+      events: {
+        Row: {
+          city: string
+          created_at: string
+          ends_at: string
+          id: string
+          is_active: boolean
+          name: string
+          name_zh: string
+          organizer: string
+          partner: string
+          starts_at: string
+          timezone: string
+          venue: string
+        }
+        Insert: {
+          city?: string
+          created_at?: string
+          ends_at: string
+          id?: string
+          is_active?: boolean
+          name: string
+          name_zh?: string
+          organizer?: string
+          partner?: string
+          starts_at: string
+          timezone?: string
+          venue: string
+        }
+        Update: {
+          city?: string
+          created_at?: string
+          ends_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          name_zh?: string
+          organizer?: string
+          partner?: string
+          starts_at?: string
+          timezone?: string
+          venue?: string
+        }
+        Relationships: []
+      }
       judges: {
         Row: {
           code: string | null
           code_hash: string | null
+          event_id: string | null
           id: string
           is_default: boolean
           name: string
@@ -97,6 +203,7 @@ export type Database = {
         Insert: {
           code?: string | null
           code_hash?: string | null
+          event_id?: string | null
           id?: string
           is_default?: boolean
           name: string
@@ -105,17 +212,27 @@ export type Database = {
         Update: {
           code?: string | null
           code_hash?: string | null
+          event_id?: string | null
           id?: string
           is_default?: boolean
           name?: string
           sort_order?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "judges_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       scores: {
         Row: {
           clarity: number
           data: number
+          event_id: string | null
           execution: number
           id: string
           impact: number
@@ -128,6 +245,7 @@ export type Database = {
         Insert: {
           clarity: number
           data: number
+          event_id?: string | null
           execution: number
           id?: string
           impact: number
@@ -140,6 +258,7 @@ export type Database = {
         Update: {
           clarity?: number
           data?: number
+          event_id?: string | null
           execution?: number
           id?: string
           impact?: number
@@ -150,6 +269,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "scores_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "scores_judge_id_fkey"
             columns: ["judge_id"]
@@ -173,6 +299,7 @@ export type Database = {
           created_at: string
           description: string
           email: string
+          event_id: string | null
           github_repo: string
           id: string
           lovable_commit_share: number | null
@@ -196,6 +323,7 @@ export type Database = {
           created_at?: string
           description?: string
           email: string
+          event_id?: string | null
           github_repo?: string
           id?: string
           lovable_commit_share?: number | null
@@ -219,6 +347,7 @@ export type Database = {
           created_at?: string
           description?: string
           email?: string
+          event_id?: string | null
           github_repo?: string
           id?: string
           lovable_commit_share?: number | null
@@ -238,6 +367,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "submissions_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "submissions_track_id_fkey"
             columns: ["track_id"]
             isOneToOne: false
@@ -252,6 +388,7 @@ export type Database = {
           created_at: string
           deck_url: string
           description: string
+          event_id: string | null
           id: string
           is_demo: boolean
           members: string
@@ -267,6 +404,7 @@ export type Database = {
           created_at?: string
           deck_url?: string
           description?: string
+          event_id?: string | null
           id?: string
           is_demo?: boolean
           members?: string
@@ -282,6 +420,7 @@ export type Database = {
           created_at?: string
           deck_url?: string
           description?: string
+          event_id?: string | null
           id?: string
           is_demo?: boolean
           members?: string
@@ -294,6 +433,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "teams_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "teams_track_id_fkey"
             columns: ["track_id"]
             isOneToOne: false
@@ -305,6 +451,7 @@ export type Database = {
       tracks: {
         Row: {
           data_sources: string
+          event_id: string | null
           id: number
           name_en: string
           name_zh: string
@@ -312,6 +459,7 @@ export type Database = {
         }
         Insert: {
           data_sources?: string
+          event_id?: string | null
           id: number
           name_en: string
           name_zh: string
@@ -319,33 +467,52 @@ export type Database = {
         }
         Update: {
           data_sources?: string
+          event_id?: string | null
           id?: number
           name_en?: string
           name_zh?: string
           sources?: Json
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "tracks_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       voters: {
         Row: {
           code: string
+          event_id: string | null
           id: string
           is_demo: boolean
           team_id: string | null
         }
         Insert: {
           code: string
+          event_id?: string | null
           id?: string
           is_demo?: boolean
           team_id?: string | null
         }
         Update: {
           code?: string
+          event_id?: string | null
           id?: string
           is_demo?: boolean
           team_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "voters_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "voters_team_id_fkey"
             columns: ["team_id"]
@@ -358,23 +525,33 @@ export type Database = {
       votes: {
         Row: {
           created_at: string
+          event_id: string | null
           id: string
           team_id: string
           voter_id: string
         }
         Insert: {
           created_at?: string
+          event_id?: string | null
           id?: string
           team_id: string
           voter_id: string
         }
         Update: {
           created_at?: string
+          event_id?: string | null
           id?: string
           team_id?: string
           voter_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "votes_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "votes_team_id_fkey"
             columns: ["team_id"]
@@ -396,10 +573,19 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      _active_event_id: { Args: never; Returns: string }
       _is_admin: { Args: { p_code: string }; Returns: boolean }
       _judge_id: { Args: { p_code: string }; Returns: string }
       _require_admin: { Args: { p_code: string }; Returns: undefined }
+      admin_activate_event: {
+        Args: { p_code: string; p_id: string }
+        Returns: undefined
+      }
       admin_code_status: { Args: { p_code: string }; Returns: Json }
+      admin_create_event: {
+        Args: { p_code: string; p_patch: Json }
+        Returns: string
+      }
       admin_delete_submission: {
         Args: { p_code: string; p_id: string }
         Returns: undefined
@@ -423,6 +609,10 @@ export type Database = {
       admin_reset: {
         Args: { p_code: string; p_what: string }
         Returns: undefined
+      }
+      admin_save_event: {
+        Args: { p_code: string; p_id: string; p_patch: Json }
+        Returns: string
       }
       admin_save_scan: {
         Args: { p_code: string; p_id: string; p_patch: Json }
@@ -468,6 +658,7 @@ export type Database = {
         Returns: {
           clarity: number
           data: number
+          event_id: string | null
           execution: number
           id: string
           impact: number
@@ -485,6 +676,29 @@ export type Database = {
         }
       }
       public_event_state: { Args: never; Returns: Json }
+      public_events: {
+        Args: never
+        Returns: {
+          city: string
+          created_at: string
+          ends_at: string
+          id: string
+          is_active: boolean
+          name: string
+          name_zh: string
+          organizer: string
+          partner: string
+          starts_at: string
+          timezone: string
+          venue: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "events"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       public_judges: {
         Args: never
         Returns: {
@@ -500,6 +714,7 @@ export type Database = {
           created_at: string
           deck_url: string
           description: string
+          event_id: string | null
           id: string
           is_demo: boolean
           members: string
@@ -521,6 +736,7 @@ export type Database = {
         Args: never
         Returns: {
           data_sources: string
+          event_id: string | null
           id: number
           name_en: string
           name_zh: string
