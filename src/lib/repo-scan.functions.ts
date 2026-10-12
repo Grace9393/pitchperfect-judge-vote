@@ -145,7 +145,7 @@ export const scanSubmission = createServerFn({ method: "POST" })
           const pm = LOVABLE_URL_RE.exec(html);
           if (pm?.[1]) lovableId = pm[1].toLowerCase();
           const gm = /github\.com\/([\w.-]+)\/([\w.-]+?)(?:\.git)?["'/\s?#]/i.exec(html);
-          if (gm && !["sponsors", "features", "orgs"].includes(gm[1].toLowerCase())) repo = `${gm[1]}/${gm[2]}`;
+          if (gm?.[1] && gm[2] && !["sponsors", "features", "orgs"].includes(gm[1].toLowerCase())) repo = `${gm[1]}/${gm[2]}`;
         } catch { /* unreachable site */ }
         // Fallback: find a repo whose files mention this site address
         if (!repo && !lovableId && token) {
