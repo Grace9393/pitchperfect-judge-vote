@@ -13,6 +13,8 @@ import { errMsg, trackName, useHubData, useStoredCode } from "@/lib/hub";
 export const Route = createFileRoute("/vote")({
   head: () => ({
     meta: [
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
       { title: "Audience Vote — Hack for Humanity Taiwan" },
       { name: "description", content: "Cast your three audience votes for your favourite Hack for Humanity Taiwan projects." },
       { property: "og:title", content: "Audience Vote — Hack for Humanity Taiwan" },

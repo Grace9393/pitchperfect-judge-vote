@@ -11,6 +11,8 @@ import { errMsg, trackName, useHubData } from "@/lib/hub";
 export const Route = createFileRoute("/submit")({
   head: () => ({
     meta: [
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
       { title: "Submit Your Project — Hack for Humanity Taiwan" },
       { name: "description", content: "Attendees submit their name, email, project, track and Lovable link for Hack for Humanity Taiwan." },
       { property: "og:title", content: "Submit Your Project — Hack for Humanity Taiwan" },

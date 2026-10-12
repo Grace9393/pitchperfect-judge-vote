@@ -19,6 +19,9 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { EventSettings } from "@/components/EventSettings";
+import { RoleGuide, guideSteps } from "@/components/RoleGuide";
+import { eventName, useActiveEvent } from "@/lib/events";
 import { ResultsView } from "@/components/ResultsView";
 import { useT } from "@/lib/i18n";
 import {
@@ -29,6 +32,8 @@ import {
 export const Route = createFileRoute("/admin")({
   head: () => ({
     meta: [
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
       { title: "Organizer Dashboard — Hack for Humanity Taiwan" },
       { name: "description", content: "Run phases, teams, scoring, voting and results for Hack for Humanity Taiwan." },
       { property: "og:title", content: "Organizer Dashboard — Hack for Humanity Taiwan" },
@@ -63,6 +68,7 @@ function AdminPage() {
 function Dashboard({ code, onSignOut }: { code: string; onSignOut: () => void }) {
   const { lang } = useT();
   const hub = useHubData(code);
+  const event = useActiveEvent();
   const qc = useQueryClient();
   const { state, teams, tracks, judges, results } = hub;
   const [confirmPublish, setConfirmPublish] = useState<null | "reveal" | "phase">(null);
@@ -84,7 +90,7 @@ function Dashboard({ code, onSignOut }: { code: string; onSignOut: () => void })
   return (
     <div className="mx-auto max-w-6xl space-y-4 px-4 py-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-xl font-semibold">Organizer dashboard</h1>
+        <h1 className="text-xl font-semibold">{eventName(event, lang)} · {lang === "zh" ? "管理" : "Admin"}</h1>
         <div className="flex items-center gap-2">
           {state.demo_mode && <Badge variant="destructive">Demo mode</Badge>}
           <Button variant="ghost" size="sm" onClick={onSignOut}>Sign out</Button>
@@ -100,6 +106,7 @@ function Dashboard({ code, onSignOut }: { code: string; onSignOut: () => void })
           <TabsTrigger value="voters">Voter codes</TabsTrigger>
           <TabsTrigger value="subs">Submissions</TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>
+          <TabsTrigger value="guide">{lang === "zh" ? "主辦指南" : "Admin guide"}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="control" className="space-y-4">
@@ -238,7 +245,15 @@ function Dashboard({ code, onSignOut }: { code: string; onSignOut: () => void })
 
         <TabsContent value="voters"><VotersTab code={code} teams={teams} /></TabsContent>
 
+        <TabsContent value="guide" className="max-w-3xl space-y-5 py-5">
+          <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="text-lg font-semibold">{lang === "zh" ? "主辦指南" : "Organizer quick guide"}</h2><Button variant="outline" onClick={async () => {
+            try { await navigator.clipboard.writeText(`${eventName(event, lang)} — ${lang === "zh" ? "主辦指南" : "Organizer quick guide"}\n\n${guideSteps.admin[lang].map(([title, detail], i) => `${i + 1}. ${title}\n${detail}`).join("\n\n")}`); toast.success(lang === "zh" ? "已複製" : "Guide copied"); } catch { toast.error(lang === "zh" ? "無法複製，請選取文字" : "Could not copy; select the guide text instead"); }
+          }}>{lang === "zh" ? "複製指南" : "Copy guide"}</Button></div>
+          <RoleGuide role="admin" />
+        </TabsContent>
+
         <TabsContent value="settings" className="space-y-4">
+          <EventSettings code={code} />
           <CodesCard code={code} onAdminChanged={onSignOut} />
           <TracksEditor code={code} tracks={tracks} />
           <WeightsCard weights={state.weights} onSave={(w) => patch({ weights: w }, "Weights saved")} />

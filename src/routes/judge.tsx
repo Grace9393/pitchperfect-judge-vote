@@ -13,6 +13,8 @@ import { CRITERIA, errMsg, normalizeWeights, trackName, useHubData, useStoredCod
 export const Route = createFileRoute("/judge")({
   head: () => ({
     meta: [
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
       { title: "Judge Scoring — Hack for Humanity Taiwan" },
       { name: "description", content: "Judges score live pitches at Hack for Humanity Taiwan with a 90-second timer." },
       { property: "og:title", content: "Judge Scoring — Hack for Humanity Taiwan" },
