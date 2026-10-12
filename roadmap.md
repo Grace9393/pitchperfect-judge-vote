@@ -12,6 +12,6 @@
 - [x] Submission review statuses + private notes
 - [x] Sortable submission columns (time, track, project)
 - [x] Repo scan integration (lovable_scan.py ported to TS, GitHub API, admin Review panel)
-- [ ] Concise bilingual organizer, judge and team guides on the website
-- [ ] Editable event records with preserved, separate event data for future use
-- [ ] Verify event editing and guidance in the website
+- [x] Concise bilingual organizer, judge and team guides on the website
+- [x] Editable event records with preserved, separate event data for future use
+- [x] Verify event editing and guidance in the website

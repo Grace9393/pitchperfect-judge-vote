@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { CheckCircle2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useActiveEvent } from "@/lib/events";
 import { CodeGate } from "@/components/CodeGate";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -15,9 +16,9 @@ export const Route = createFileRoute("/vote")({
     meta: [
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { title: "Audience Vote — Hack for Humanity Taiwan" },
-      { name: "description", content: "Cast your three audience votes for your favourite Hack for Humanity Taiwan projects." },
-      { property: "og:title", content: "Audience Vote — Hack for Humanity Taiwan" },
+      { title: "Audience Vote — Event Judging Hub" },
+      { name: "description", content: "Cast your three audience votes for your favourite Event Judging Hub projects." },
+      { property: "og:title", content: "Audience Vote — Event Judging Hub" },
       { property: "og:description", content: "Three votes, one per team. Pick your favourites." },
     ],
   }),
@@ -28,6 +29,7 @@ type Voter = { id: string; team_id: string | null; voted: string[] };
 
 function VotePage() {
   const { t, lang } = useT();
+  const event = useActiveEvent();
   const [code, setCode, ready] = useStoredCode("hfh-voter");
   const [voter, setVoter] = useState<Voter | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
@@ -41,7 +43,7 @@ function VotePage() {
 
   useEffect(() => {
     if (code) load(code).then((ok) => !ok && setCode(null));
-  }, [code, load]);
+  }, [code, load, event?.id]);
 
   if (!ready) return null;
   if (!code || !voter)

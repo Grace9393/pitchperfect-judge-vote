@@ -10,9 +10,9 @@ export const Route = createFileRoute("/results")({
     meta: [
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { title: "Live Results — Hack for Humanity Taiwan" },
-      { name: "description", content: "Winners and per-track leaderboards for Hack for Humanity Taiwan, updated live." },
-      { property: "og:title", content: "Live Results — Hack for Humanity Taiwan" },
+      { title: "Live Results — Event Judging Hub" },
+      { name: "description", content: "Winners and per-track leaderboards for Event Judging Hub, updated live." },
+      { property: "og:title", content: "Live Results — Event Judging Hub" },
       { property: "og:description", content: "1st, 2nd and 3rd place plus per-track standings." },
     ],
   }),
