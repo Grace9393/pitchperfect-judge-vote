@@ -134,6 +134,31 @@ export const scanSubmission = createServerFn({ method: "POST" })
     // Resolve target to a GitHub repo
     let repo = parseRepo(data.target);
     let lovableId = parseLovable(data.target);
+    // Published app / custom domain: read its page for a project ID or GitHub link
+    if (!repo && !lovableId && /^https:\/\//i.test(data.target.trim())) {
+      let host = "";
+      try { host = new URL(data.target.trim()).hostname.toLowerCase(); } catch { /* ignore */ }
+      if (host && !/(^|\.)(localhost|internal)$/.test(host) && !/^\d+\.\d+\.\d+\.\d+$/.test(host)) {
+        try {
+          const res = await fetch(data.target.trim(), { headers: { "User-Agent": "hfh-lovable-scan" }, redirect: "follow" });
+          const html = res.ok ? (await res.text()).slice(0, 500_000) : "";
+          const pm = LOVABLE_URL_RE.exec(html);
+          if (pm?.[1]) lovableId = pm[1].toLowerCase();
+          const gm = /github\.com\/([\w.-]+)\/([\w.-]+?)(?:\.git)?["'/\s?#]/i.exec(html);
+          if (gm?.[1] && gm[2] && !["sponsors", "features", "orgs"].includes(gm[1].toLowerCase())) repo = `${gm[1]}/${gm[2]}`;
+        } catch { /* unreachable site */ }
+        // Fallback: find a repo whose files mention this site address
+        if (!repo && !lovableId && token) {
+          const d = (await gh("/search/code", token, { q: `"${host}" in:file`, per_page: "20" })) as { items?: { repository: { full_name: string } }[] } | null;
+          repo = d?.items?.[0]?.repository.full_name ?? null;
+        }
+        if (!repo && !lovableId) {
+          const note = "Couldn't link this site to a public GitHub repo — ask the team for their lovable.dev/projects link or GitHub link.";
+          await sb.rpc("admin_save_scan", { p_code: data.code, p_id: data.submissionId, p_patch: { scan_verdict: "unresolved", scan_note: note } });
+          return { error: null, result: { verdict: "unresolved", note } };
+        }
+      }
+    }
     if (!repo && lovableId) {
       if (!token) return { error: "Resolving Lovable project links needs the GitHub token (not configured)." };
       const d = (await gh("/search/code", token, { q: `"${lovableId}" in:file`, per_page: "20" })) as { items?: { repository: { full_name: string } }[] } | null;
