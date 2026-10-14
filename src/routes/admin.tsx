@@ -558,7 +558,7 @@ function VotersTab({ code, teams }: { code: string; teams: Team[] }) {
 }
 
 function exportCsv(board: ReturnType<typeof computeLeaderboard>, tracks: ReturnType<typeof useHubData>["tracks"], results: ReturnType<typeof useHubData>["results"], judges: ReturnType<typeof useHubData>["judges"], teams: Team[], weights: Weights) {
-  const esc = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+  const esc = (v: unknown) => { let s = String(v ?? ""); if (/^[=+\-@\t\r]/.test(s)) s = "'" + s; return `"${s.replace(/"/g, '""')}"`; };
   const lines = [["rank", "team", "project", "track", "built_with_lovable", "judge_score", "judges_scored", "votes", "audience_score", "total", "avg_impact"].join(",")];
   board.forEach((r) => lines.push([r.rank, r.team.name, r.team.project_name, tracks.find((x) => x.id === r.team.track_id)?.name_en, r.team.built_with_lovable, r.judgeScore.toFixed(2), r.judgeCount, r.votes, r.audienceScore.toFixed(2), r.combined.toFixed(2), r.avgImpact.toFixed(2)].map(esc).join(",")));
   lines.push("", ["judge", "team", ...CRITERIA.map((c) => c.key), "weighted", "locked"].join(","));
@@ -617,7 +617,7 @@ function SubmissionsTab({ code, tracks }: { code: string; tracks: Track[] }) {
     </th>
   );
   const csv = () => {
-    const esc = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+    const esc = (v: unknown) => { let s = String(v ?? ""); if (/^[=+\-@\t\r]/.test(s)) s = "'" + s; return `"${s.replace(/"/g, '""')}"`; };
     const rows = [["submitted_at", "name", "email", "project", "track", "project_url", "review_status", "notes", "scan_verdict", "scan_confidence", "lovable_commit_pct", "github_repo", "lovable_project_id", "scan_note"].join(",")];
     filtered.forEach((s) => rows.push([new Date(s.created_at).toISOString(), s.name, s.email, s.project_name, trackNameOf(s.track_id), s.lovable_url, statusLabel(s.review_status), s.notes, s.scan_verdict, s.scan_confidence, s.lovable_commit_share ?? "", s.github_repo, s.lovable_project_id, s.scan_note].map(esc).join(",")));
     const a = document.createElement("a");
