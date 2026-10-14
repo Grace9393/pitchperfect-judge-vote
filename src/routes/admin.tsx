@@ -703,10 +703,11 @@ function ReviewDialog({ code, sub, tracks, onClose }: { code: string; sub: Submi
       lovableProjectId: sub.lovable_project_id, verdict: sub.scan_verdict, confidence: sub.scan_confidence,
       commitShare: sub.lovable_commit_share, phaseMix: sub.phase_breakdown, signals: sub.scan_signals, note: sub.scan_note,
     } : null);
+  const [repoOverride, setRepoOverride] = useState(sub.github_repo ?? "");
   const runScan = async () => {
     setBusy("scan"); setScanErr(null);
     try {
-      const r = await scan({ data: { code, submissionId: sub.id, target: f.url } });
+      const r = await scan({ data: { code, submissionId: sub.id, target: repoOverride.trim() || f.url } });
       if (r.error) setScanErr(r.error); else setScanRes(r.result as ScanResult);
     } catch (e) { setScanErr((e as Error).message); }
     setBusy(null);
@@ -770,10 +771,13 @@ function ReviewDialog({ code, sub, tracks, onClose }: { code: string; sub: Submi
           <div className="rounded-md border p-3">
             <div className="flex items-center justify-between gap-2">
               <div className="font-medium">Lovable usage scan</div>
-              <Button size="sm" variant="secondary" onClick={runScan} disabled={busy !== null || !f.url.trim()}>
+              <Button size="sm" variant="secondary" onClick={runScan} disabled={busy !== null || !(repoOverride.trim() || f.url.trim())}>
                 {busy === "scan" ? "Scanning…" : scanRes ? "Re-scan repository" : "Scan repository"}
               </Button>
             </div>
+            <Input value={repoOverride} maxLength={500} onChange={(e) => setRepoOverride(e.target.value)}
+              placeholder="GitHub repo (optional) — e.g. owner/repo or https://github.com/owner/repo" className="mt-2" />
+            <p className="mt-1 text-xs text-muted-foreground">Fill this in when the Lovable link can't be matched to a repo. Private repos work if the saved GitHub token can access them.</p>
             {scanErr && <p className="mt-2 text-destructive">{scanErr}</p>}
             {scanRes ? (
               <div className="mt-2 space-y-1.5 text-sm">
