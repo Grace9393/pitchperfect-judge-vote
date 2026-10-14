@@ -2,10 +2,29 @@ import { Link } from "@tanstack/react-router";
 import { useT } from "@/lib/i18n";
 import { eventName, eventDateLine, useActiveEvent } from "@/lib/events";
 import { Button } from "@/components/ui/button";
+import { useWebMCP } from "use-webmcp-tool";
+import { runWebMCPTool } from "@/lib/webmcp-telemetry";
 
 export function SiteHeader() {
   const { t, lang, setLang } = useT();
   const event = useActiveEvent();
+  useWebMCP({
+    name: "get_event_info",
+    description: "Get the event name, date, time and venue shown in the page header.",
+    annotations: { readOnlyHint: true },
+    execute: () => runWebMCPTool("get_event_info", () =>
+      event ? `${eventName(event, lang)} — ${eventDateLine(event, lang)}` : "Event details are still loading."),
+  });
+  useWebMCP({
+    name: "set_language",
+    description: "Switch the site language between English (en) and Traditional Chinese (zh).",
+    inputSchema: { type: "object", properties: { lang: { type: "string", enum: ["en", "zh"], description: "Language code." } }, required: ["lang"] },
+    execute: ({ lang: next }: { lang: string }) => runWebMCPTool("set_language", () => {
+      if (next !== "en" && next !== "zh") throw new Error("Language must be en or zh.");
+      setLang(next);
+      return `Language set to ${next}.`;
+    }),
+  });
   const links = [
     { to: "/guide", k: "guide" },
     { to: "/submit", k: "submitNav" },
