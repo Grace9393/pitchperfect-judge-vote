@@ -15,3 +15,4 @@
 - The admin code is site-wide; new events copy tracks, judge code hashes and weights but never participant or scoring data, so event history remains separate.
 - Event timestamps are stored in UTC and edited/displayed using the event IANA timezone through date-fns-tz, avoiding browser-local time drift.
 - Public judge/team guidance lives on `/guide`; organizer instructions stay inside the admin code gate.
+- The MCP server (`src/lib/mcp/`, mounted at `/mcp`) is public and read-only, calling only the public RPCs anon can already use — the app has no user accounts, so nothing private or code-gated may be exposed there.
