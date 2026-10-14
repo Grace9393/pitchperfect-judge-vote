@@ -1,0 +1,85 @@
+{
+  "version": 1,
+  "sdk_version": "3.0.6",
+  "path": "/mcp",
+  "auth": {
+    "type": "none"
+  },
+  "mcp": {
+    "server": {
+      "name": "pitchperfect-judge-vote",
+      "version": "0.1.0",
+      "title": "Pitchperfect Judge Vote"
+    },
+    "tools": [
+      {
+        "name": "get_event",
+        "title": "Get event status",
+        "description": "Get the active hackathon's name, time, venue and current phase (check-in, hacking, pitches, voting, results).",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_tracks",
+        "title": "List tracks",
+        "description": "List the hackathon tracks with their Taiwan open-data source references.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_teams",
+        "title": "List teams",
+        "description": "List the competing teams with track, project name, one-line description, deck link and table number.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_results",
+        "title": "Get published results",
+        "description": "Get the final ranking (70% judges, 30% audience) once organizers have published results; otherwise reports they are not public yet.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}

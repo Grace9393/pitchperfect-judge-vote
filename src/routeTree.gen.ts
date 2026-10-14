@@ -13,9 +13,11 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as GuideRouteImport } from './routes/guide'
 import { Route as JudgeRouteImport } from './routes/judge'
+import { Route as McpRouteImport } from './routes/mcp'
 import { Route as ResultsRouteImport } from './routes/results'
 import { Route as SubmitRouteImport } from './routes/submit'
 import { Route as VoteRouteImport } from './routes/vote'
+import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -37,6 +39,11 @@ const JudgeRoute = JudgeRouteImport.update({
   path: '/judge',
   getParentRoute: () => rootRouteImport,
 } as any)
+const McpRoute = McpRouteImport.update({
+  id: '/mcp',
+  path: '/mcp',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ResultsRoute = ResultsRouteImport.update({
   id: '/results',
   path: '/results',
@@ -52,24 +59,34 @@ const VoteRoute = VoteRouteImport.update({
   path: '/vote',
   getParentRoute: () => rootRouteImport,
 } as any)
+const Char91DotwellKnownChar93OauthProtectedResourceRoute =
+  Char91DotwellKnownChar93OauthProtectedResourceRouteImport.update({
+    id: '/.well-known/oauth-protected-resource',
+    path: '/.well-known/oauth-protected-resource',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/guide': typeof GuideRoute
   '/judge': typeof JudgeRoute
+  '/mcp': typeof McpRoute
   '/results': typeof ResultsRoute
   '/submit': typeof SubmitRoute
   '/vote': typeof VoteRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/guide': typeof GuideRoute
   '/judge': typeof JudgeRoute
+  '/mcp': typeof McpRoute
   '/results': typeof ResultsRoute
   '/submit': typeof SubmitRoute
   '/vote': typeof VoteRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -77,25 +94,46 @@ export interface FileRoutesById {
   '/admin': typeof AdminRoute
   '/guide': typeof GuideRoute
   '/judge': typeof JudgeRoute
+  '/mcp': typeof McpRoute
   '/results': typeof ResultsRoute
   '/submit': typeof SubmitRoute
   '/vote': typeof VoteRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/admin' | '/guide' | '/judge' | '/results' | '/submit' | '/vote'
+    | '/'
+    | '/admin'
+    | '/guide'
+    | '/judge'
+    | '/mcp'
+    | '/results'
+    | '/submit'
+    | '/vote'
+    | '/.well-known/oauth-protected-resource'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/admin' | '/guide' | '/judge' | '/results' | '/submit' | '/vote'
+  to:
+    | '/'
+    | '/admin'
+    | '/guide'
+    | '/judge'
+    | '/mcp'
+    | '/results'
+    | '/submit'
+    | '/vote'
+    | '/.well-known/oauth-protected-resource'
   id:
     | '__root__'
     | '/'
     | '/admin'
     | '/guide'
     | '/judge'
+    | '/mcp'
     | '/results'
     | '/submit'
     | '/vote'
+    | '/.well-known/oauth-protected-resource'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -103,9 +141,11 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRoute
   GuideRoute: typeof GuideRoute
   JudgeRoute: typeof JudgeRoute
+  McpRoute: typeof McpRoute
   ResultsRoute: typeof ResultsRoute
   SubmitRoute: typeof SubmitRoute
   VoteRoute: typeof VoteRoute
+  Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -138,6 +178,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof JudgeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/mcp': {
+      id: '/mcp'
+      path: '/mcp'
+      fullPath: '/mcp'
+      preLoaderRoute: typeof McpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/results': {
       id: '/results'
       path: '/results'
@@ -159,6 +206,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof VoteRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/.well-known/oauth-protected-resource': {
+      id: '/.well-known/oauth-protected-resource'
+      path: '/.well-known/oauth-protected-resource'
+      fullPath: '/.well-known/oauth-protected-resource'
+      preLoaderRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -167,9 +221,12 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRoute,
   GuideRoute: GuideRoute,
   JudgeRoute: JudgeRoute,
+  McpRoute: McpRoute,
   ResultsRoute: ResultsRoute,
   SubmitRoute: SubmitRoute,
   VoteRoute: VoteRoute,
+  Char91DotwellKnownChar93OauthProtectedResourceRoute:
+    Char91DotwellKnownChar93OauthProtectedResourceRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
